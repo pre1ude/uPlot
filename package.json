@@ -7,7 +7,8 @@
   "typings": "./dist/uPlot.d.ts",
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,8 @@
   "homepage": "https://github.com/leeoniya/uPlot#readme",
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.4",
-    "rollup": "^4.35.0"
+    "jsdom": "^26.1.0",
+    "rollup": "^4.35.0",
+    "vitest": "^3.2.4"
   }
 }

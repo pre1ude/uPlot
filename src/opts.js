@@ -1,6 +1,6 @@
 import {
 	FEAT_TIME,
-} from './feats';
+} from './feats.js';
 
 import {
 	assign,
@@ -25,19 +25,19 @@ import {
 	noop,
 	ceil,
 	closestIdx,
-} from './utils';
+} from './utils.js';
 
 import {
 	hexBlack,
 	WIDTH,
 	HEIGHT,
 	LEGEND_DISP,
-} from './strings';
+} from './strings.js';
 
 import {
 	placeDiv,
 	setStylePx,
-} from './dom';
+} from './dom.js';
 
 import { fmtDate } from './fmtDate';
 

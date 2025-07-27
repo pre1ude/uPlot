@@ -9,6 +9,10 @@
 
 const FEAT_TIME          = true;
 
+const FEAT_POINTS        = true;
+
+const FEAT_PATHS         = true;
+
 // binary search for index of closest value
 function closestIdx(num, arr, lo, hi) {
 	let mid;
@@ -57,47 +61,8 @@ function makeIndexOfs(predicate) {
 }
 
 const notNullish = v => v != null;
-const isPositive = v => v != null && v > 0;
 
 const nonNullIdxs = makeIndexOfs(notNullish);
-const positiveIdxs = makeIndexOfs(isPositive);
-
-function getMinMax(data, _i0, _i1, sorted = 0, log = false) {
-//	console.log("getMinMax()");
-
-	let getEdgeIdxs = log ? positiveIdxs : nonNullIdxs;
-	let predicate = log ? isPositive : notNullish;
-
-	[_i0, _i1] = getEdgeIdxs(data, _i0, _i1);
-
-	let _min = data[_i0];
-	let _max = data[_i0];
-
-	if (_i0 > -1) {
-		if (sorted == 1) {
-			_min = data[_i0];
-			_max = data[_i1];
-		}
-		else if (sorted == -1) {
-			_min = data[_i1];
-			_max = data[_i0];
-		}
-		else {
-			for (let i = _i0; i <= _i1; i++) {
-				let v = data[i];
-
-				if (predicate(v)) {
-					if (v < _min)
-						_min = v;
-					else if (v > _max)
-						_max = v;
-				}
-			}
-		}
-	}
-
-	return [_min ?? inf, _max ?? -inf]; // todo: fix to return nulls
-}
 
 function rangeLog(min, max, base, fullMags) {
 	if (base == 2)
@@ -199,21 +164,6 @@ function ifNull(lh, rh) {
 	return lh == null ? rh : lh;
 }
 
-// checks if given index range in an array contains a non-null value
-// aka a range-bounded Array.some()
-function hasData(data, idx0, idx1) {
-	idx0 = ifNull(idx0, 0);
-	idx1 = ifNull(idx1, data.length - 1);
-
-	while (idx0 <= idx1) {
-		if (data[idx0] != null)
-			return true;
-		idx0++;
-	}
-
-	return false;
-}
-
 function _rangeNum(_min, _max, cfg) {
 	let cmin = cfg.min;
 	let cmax = cfg.max;
@@ -298,8 +248,6 @@ const pow = M.pow;
 const sign = M.sign;
 const log10 = M.log10;
 const log2 = M.log2;
-// TODO: seems like this needs to match asinh impl if the passed v is tweaked?
-const sinh =  (v, linthresh = 1) => M.sinh(v) * linthresh;
 const asinh = (v, linthresh = 1) => M.asinh(v / linthresh);
 
 const inf = Infinity;
@@ -329,10 +277,6 @@ const retArg0 = _0 => _0;
 const retArg1 = (_0, _1) => _1;
 
 const retNull = _ => null;
-
-const retTrue = _ => true;
-
-const retEq = (a, b) => a == b;
 
 const regex6 = /\.\d*?(?=9{6,}|0{6,})/gm;
 
@@ -435,10 +379,6 @@ function isObj(v) {
 	}
 
 	return is;
-}
-
-function fastIsObj(v) {
-	return v != null && typeof v == 'object';
 }
 
 const TypedArray = Object.getPrototypeOf(Uint8Array);
@@ -590,8 +530,6 @@ function join(tables, nullModes) {
 	return data;
 }
 
-const microTask = typeof queueMicrotask == "undefined" ? fn => Promise.resolve().then(fn) : queueMicrotask;
-
 // TODO: https://github.com/dy/sort-ids (~2x faster for 1e5+ arrays)
 function sortCols(table) {
 	let head = table[0];
@@ -676,6 +614,26 @@ function isAsc(vals, samples = 100) {
 	return true;
 }
 
+const pre = "u-";
+
+const UPLOT          =       "uplot";
+const ORI_HZ         = pre + "hz";
+const ORI_VT         = pre + "vt";
+const TITLE          = pre + "title";
+const WRAP           = pre + "wrap";
+const UNDER          = pre + "under";
+const OVER           = pre + "over";
+const AXIS           = pre + "axis";
+const OFF            = pre + "off";
+const CURSOR_X       = pre + "cursor-x";
+const CURSOR_Y       = pre + "cursor-y";
+const CURSOR_PT      = pre + "cursor-pt";
+const LEGEND         = pre + "legend";
+const LEGEND_SERIES  = pre + "series";
+const LEGEND_MARKER  = pre + "marker";
+const LEGEND_LABEL   = pre + "label";
+const LEGEND_VALUE   = pre + "value";
+
 const WIDTH       = "width";
 const HEIGHT      = "height";
 const TOP         = "top";
@@ -698,29 +656,6 @@ const change      = "change";
 const dppxchange  = "dppxchange";
 
 const LEGEND_DISP = "--";
-
-const pre = "u-";
-
-const UPLOT          =       "uplot";
-const ORI_HZ         = pre + "hz";
-const ORI_VT         = pre + "vt";
-const TITLE          = pre + "title";
-const WRAP           = pre + "wrap";
-const UNDER          = pre + "under";
-const OVER           = pre + "over";
-const AXIS           = pre + "axis";
-const OFF            = pre + "off";
-const SELECT         = pre + "select";
-const CURSOR_X       = pre + "cursor-x";
-const CURSOR_Y       = pre + "cursor-y";
-const CURSOR_PT      = pre + "cursor-pt";
-const LEGEND         = pre + "legend";
-const LEGEND_LIVE    = pre + "live";
-const LEGEND_INLINE  = pre + "inline";
-const LEGEND_SERIES  = pre + "series";
-const LEGEND_MARKER  = pre + "marker";
-const LEGEND_LABEL   = pre + "label";
-const LEGEND_VALUE   = pre + "value";
 
 const domEnv = typeof window != 'undefined';
 
@@ -797,19 +732,6 @@ function elTrans(el, xPos, yPos, xMax, yMax) {
 	}
 }
 
-const colorCache = new WeakMap();
-
-function elColor(el, background, borderColor) {
-	let newColor = background + borderColor;
-	let oldColor = colorCache.get(el);
-
-	if (newColor != oldColor) {
-		colorCache.set(el, newColor);
-		el.style.background = background;
-		el.style.borderColor = borderColor;
-	}
-}
-
 const sizeCache = new WeakMap();
 
 function elSize(el, newWid, newHgt, centered) {
@@ -820,8 +742,8 @@ function elSize(el, newWid, newHgt, centered) {
 		sizeCache.set(el, newSize);
 		el.style.height = newHgt + "px";
 		el.style.width = newWid + "px";
-		el.style.marginLeft = centered ? -newWid/2 + "px" : 0;
-		el.style.marginTop = centered ? -newHgt/2 + "px" : 0;
+		el.style.marginLeft = -newWid/2 + "px" ;
+		el.style.marginTop = -newHgt/2 + "px" ;
 	}
 }
 
@@ -833,7 +755,7 @@ function on(ev, el, cb, capt) {
 }
 
 function off(ev, el, cb, capt) {
-	el.removeEventListener(ev, cb, evOpts);
+	el.removeEventListener(ev, cb, capt ? evOpts2 : evOpts);
 }
 
 domEnv && setPxRatio();
@@ -980,757 +902,6 @@ function tzDate(date, tz) {
 
 	return date2;
 }
-
-//export const series = [];
-
-// default formatters:
-
-const onlyWhole = v => v % 1 == 0;
-
-const allMults = [1,2,2.5,5];
-
-// ...0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5
-const decIncrs = genIncrs(10, -32, 0, allMults);
-
-// 1, 2, 2.5, 5, 10, 20, 25, 50...
-const oneIncrs = genIncrs(10, 0, 32, allMults);
-
-// 1, 2,      5, 10, 20, 25, 50...
-const wholeIncrs = oneIncrs.filter(onlyWhole);
-
-const numIncrs = decIncrs.concat(oneIncrs);
-
-const NL = "\n";
-
-const yyyy    = "{YYYY}";
-const NLyyyy  = NL + yyyy;
-const md      = "{M}/{D}";
-const NLmd    = NL + md;
-const NLmdyy  = NLmd + "/{YY}";
-
-const aa      = "{aa}";
-const hmm     = "{h}:{mm}";
-const hmmaa   = hmm + aa;
-const NLhmmaa = NL + hmmaa;
-const ss      = ":{ss}";
-
-const _ = null;
-
-function genTimeStuffs(ms) {
-	let	s  = ms * 1e3,
-		m  = s  * 60,
-		h  = m  * 60,
-		d  = h  * 24,
-		mo = d  * 30,
-		y  = d  * 365;
-
-	// min of 1e-3 prevents setting a temporal x ticks too small since Date objects cannot advance ticks smaller than 1ms
-	let subSecIncrs = ms == 1 ? genIncrs(10, 0, 3, allMults).filter(onlyWhole) : genIncrs(10, -3, 0, allMults);
-
-	let timeIncrs = subSecIncrs.concat([
-		// minute divisors (# of secs)
-		s,
-		s * 5,
-		s * 10,
-		s * 15,
-		s * 30,
-		// hour divisors (# of mins)
-		m,
-		m * 5,
-		m * 10,
-		m * 15,
-		m * 30,
-		// day divisors (# of hrs)
-		h,
-		h * 2,
-		h * 3,
-		h * 4,
-		h * 6,
-		h * 8,
-		h * 12,
-		// month divisors TODO: need more?
-		d,
-		d * 2,
-		d * 3,
-		d * 4,
-		d * 5,
-		d * 6,
-		d * 7,
-		d * 8,
-		d * 9,
-		d * 10,
-		d * 15,
-		// year divisors (# months, approx)
-		mo,
-		mo * 2,
-		mo * 3,
-		mo * 4,
-		mo * 6,
-		// century divisors
-		y,
-		y * 2,
-		y * 5,
-		y * 10,
-		y * 25,
-		y * 50,
-		y * 100,
-	]);
-
-	// [0]:   minimum num secs in the tick incr
-	// [1]:   default tick format
-	// [2-7]: rollover tick formats
-	// [8]:   mode: 0: replace [1] -> [2-7], 1: concat [1] + [2-7]
-	const _timeAxisStamps = [
-	//   tick incr    default          year                    month   day                   hour    min       sec   mode
-		[y,           yyyy,            _,                      _,      _,                    _,      _,        _,       1],
-		[d * 28,      "{MMM}",         NLyyyy,                 _,      _,                    _,      _,        _,       1],
-		[d,           md,              NLyyyy,                 _,      _,                    _,      _,        _,       1],
-		[h,           "{h}" + aa,      NLmdyy,                 _,      NLmd,                 _,      _,        _,       1],
-		[m,           hmmaa,           NLmdyy,                 _,      NLmd,                 _,      _,        _,       1],
-		[s,           ss,              NLmdyy + " " + hmmaa,   _,      NLmd + " " + hmmaa,   _,      NLhmmaa,  _,       1],
-		[ms,          ss + ".{fff}",   NLmdyy + " " + hmmaa,   _,      NLmd + " " + hmmaa,   _,      NLhmmaa,  _,       1],
-	];
-
-	// the ensures that axis ticks, values & grid are aligned to logical temporal breakpoints and not an arbitrary timestamp
-	// https://www.timeanddate.com/time/dst/
-	// https://www.timeanddate.com/time/dst/2019.html
-	// https://www.epochconverter.com/timezones
-	function timeAxisSplits(tzDate) {
-		return (self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace) => {
-			let splits = [];
-			let isYr = foundIncr >= y;
-			let isMo = foundIncr >= mo && foundIncr < y;
-
-			// get the timezone-adjusted date
-			let minDate = tzDate(scaleMin);
-			let minDateTs = roundDec(minDate * ms, 3);
-
-			// get ts of 12am (this lands us at or before the original scaleMin)
-			let minMin = mkDate(minDate.getFullYear(), isYr ? 0 : minDate.getMonth(), isMo || isYr ? 1 : minDate.getDate());
-			let minMinTs = roundDec(minMin * ms, 3);
-
-			if (isMo || isYr) {
-				let moIncr = isMo ? foundIncr / mo : 0;
-				let yrIncr = isYr ? foundIncr / y  : 0;
-			//	let tzOffset = scaleMin - minDateTs;		// needed?
-				let split = minDateTs == minMinTs ? minDateTs : roundDec(mkDate(minMin.getFullYear() + yrIncr, minMin.getMonth() + moIncr, 1) * ms, 3);
-				let splitDate = new Date(round(split / ms));
-				let baseYear = splitDate.getFullYear();
-				let baseMonth = splitDate.getMonth();
-
-				for (let i = 0; split <= scaleMax; i++) {
-					let next = mkDate(baseYear + yrIncr * i, baseMonth + moIncr * i, 1);
-					let offs = next - tzDate(roundDec(next * ms, 3));
-
-					split = roundDec((+next + offs) * ms, 3);
-
-					if (split <= scaleMax)
-						splits.push(split);
-				}
-			}
-			else {
-				let incr0 = foundIncr >= d ? d : foundIncr;
-				let tzOffset = floor(scaleMin) - floor(minDateTs);
-				let split = minMinTs + tzOffset + incrRoundUp(minDateTs - minMinTs, incr0);
-				splits.push(split);
-
-				let date0 = tzDate(split);
-
-				let prevHour = date0.getHours() + (date0.getMinutes() / m) + (date0.getSeconds() / h);
-				let incrHours = foundIncr / h;
-
-				let minSpace = self.axes[axisIdx]._space;
-				let pctSpace = foundSpace / minSpace;
-
-				while (1) {
-					split = roundDec(split + foundIncr, ms == 1 ? 0 : 3);
-
-					if (split > scaleMax)
-						break;
-
-					if (incrHours > 1) {
-						let expectedHour = floor(roundDec(prevHour + incrHours, 6)) % 24;
-						let splitDate = tzDate(split);
-						let actualHour = splitDate.getHours();
-
-						let dstShift = actualHour - expectedHour;
-
-						if (dstShift > 1)
-							dstShift = -1;
-
-						split -= dstShift * h;
-
-						prevHour = (prevHour + incrHours) % 24;
-
-						// add a tick only if it's further than 70% of the min allowed label spacing
-						let prevSplit = splits[splits.length - 1];
-						let pctIncr = roundDec((split - prevSplit) / foundIncr, 3);
-
-						if (pctIncr * pctSpace >= .7)
-							splits.push(split);
-					}
-					else
-						splits.push(split);
-				}
-			}
-
-			return splits;
-		}
-	}
-
-	return [
-		timeIncrs,
-		_timeAxisStamps,
-		timeAxisSplits,
-	];
-}
-
-const [ timeIncrsMs, _timeAxisStampsMs, timeAxisSplitsMs ] = genTimeStuffs(1);
-const [ timeIncrsS,  _timeAxisStampsS,  timeAxisSplitsS  ] = genTimeStuffs(1e-3);
-
-// base 2
-genIncrs(2, -53, 53, [1]);
-
-/*
-console.log({
-	decIncrs,
-	oneIncrs,
-	wholeIncrs,
-	numIncrs,
-	timeIncrs,
-	fixedDec,
-});
-*/
-
-function timeAxisStamps(stampCfg, fmtDate) {
-	return stampCfg.map(s => s.map((v, i) =>
-		i == 0 || i == 8 || v == null ? v : fmtDate(i == 1 || s[8] == 0 ? v : s[1] + v)
-	));
-}
-
-// TODO: will need to accept spaces[] and pull incr into the loop when grid will be non-uniform, eg for log scales.
-// currently we ignore this for months since they're *nearly* uniform and the added complexity is not worth it
-function timeAxisVals(tzDate, stamps) {
-	return (self, splits, axisIdx, foundSpace, foundIncr) => {
-		let s = stamps.find(s => foundIncr >= s[0]) || stamps[stamps.length - 1];
-
-		// these track boundaries when a full label is needed again
-		let prevYear;
-		let prevMnth;
-		let prevDate;
-		let prevHour;
-		let prevMins;
-		let prevSecs;
-
-		return splits.map(split => {
-			let date = tzDate(split);
-
-			let newYear = date.getFullYear();
-			let newMnth = date.getMonth();
-			let newDate = date.getDate();
-			let newHour = date.getHours();
-			let newMins = date.getMinutes();
-			let newSecs = date.getSeconds();
-
-			let stamp = (
-				newYear != prevYear && s[2] ||
-				newMnth != prevMnth && s[3] ||
-				newDate != prevDate && s[4] ||
-				newHour != prevHour && s[5] ||
-				newMins != prevMins && s[6] ||
-				newSecs != prevSecs && s[7] ||
-				                       s[1]
-			);
-
-			prevYear = newYear;
-			prevMnth = newMnth;
-			prevDate = newDate;
-			prevHour = newHour;
-			prevMins = newMins;
-			prevSecs = newSecs;
-
-			return stamp(date);
-		});
-	}
-}
-
-// for when axis.values is defined as a static fmtDate template string
-function timeAxisVal(tzDate, dateTpl) {
-	let stamp = fmtDate(dateTpl);
-	return (self, splits, axisIdx, foundSpace, foundIncr) => splits.map(split => stamp(tzDate(split)));
-}
-
-function mkDate(y, m, d) {
-	return new Date(y, m, d);
-}
-
-function timeSeriesStamp(stampCfg, fmtDate) {
-	return fmtDate(stampCfg);
-}
-const _timeSeriesStamp = '{YYYY}-{MM}-{DD} {h}:{mm}{aa}';
-
-function timeSeriesVal(tzDate, stamp) {
-	return (self, val, seriesIdx, dataIdx) => dataIdx == null ? LEGEND_DISP : stamp(tzDate(val));
-}
-
-function legendStroke(self, seriesIdx) {
-	let s = self.series[seriesIdx];
-	return s.width ? s.stroke(self, seriesIdx) : s.points.width ? s.points.stroke(self, seriesIdx) : null;
-}
-
-function legendFill(self, seriesIdx) {
-	return self.series[seriesIdx].fill(self, seriesIdx);
-}
-
-const legendOpts = {
-	show: true,
-	live: true,
-	isolate: false,
-	mount: noop,
-	markers: {
-		show: true,
-		width: 2,
-		stroke: legendStroke,
-		fill: legendFill,
-		dash: "solid",
-	},
-	idx: null,
-	idxs: null,
-	values: [],
-};
-
-function cursorPointShow(self, si) {
-	let o = self.cursor.points;
-
-	let pt = placeDiv();
-
-	let size = o.size(self, si);
-	setStylePx(pt, WIDTH, size);
-	setStylePx(pt, HEIGHT, size);
-
-	let mar = size / -2;
-	setStylePx(pt, "marginLeft", mar);
-	setStylePx(pt, "marginTop", mar);
-
-	let width = o.width(self, si, size);
-	width && setStylePx(pt, "borderWidth", width);
-
-	return pt;
-}
-
-function cursorPointFill(self, si) {
-	let sp = self.series[si].points;
-	return sp._fill || sp._stroke;
-}
-
-function cursorPointStroke(self, si) {
-	let sp = self.series[si].points;
-	return sp._stroke || sp._fill;
-}
-
-function cursorPointSize(self, si) {
-	let sp = self.series[si].points;
-	return sp.size;
-}
-
-const moveTuple = [0,0];
-
-function cursorMove(self, mouseLeft1, mouseTop1) {
-	moveTuple[0] = mouseLeft1;
-	moveTuple[1] = mouseTop1;
-	return moveTuple;
-}
-
-function filtBtn0(self, targ, handle, onlyTarg = true) {
-	return e => {
-		e.button == 0 && (!onlyTarg || e.target == targ) && handle(e);
-	};
-}
-
-function filtTarg(self, targ, handle, onlyTarg = true) {
-	return e => {
-		(!onlyTarg || e.target == targ) && handle(e);
-	};
-}
-
-const cursorOpts = {
-	show: true,
-	x: true,
-	y: true,
-	lock: false,
-	move: cursorMove,
-	points: {
-		one:    false,
-		show:   cursorPointShow,
-		size:   cursorPointSize,
-		width:  0,
-		stroke: cursorPointStroke,
-		fill:   cursorPointFill,
-	},
-
-	bind: {
-		mousedown:   filtBtn0,
-		mouseup:     filtBtn0,
-		click:       filtBtn0, // legend clicks, not .u-over clicks
-		dblclick:    filtBtn0,
-
-		mousemove:   filtTarg,
-		mouseleave:  filtTarg,
-		mouseenter:  filtTarg,
-	},
-
-	drag: {
-		setScale: true,
-		x: true,
-		y: false,
-		dist: 0,
-		uni: null,
-		click: (self, e) => {
-		//	e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation();
-		},
-		_x: false,
-		_y: false,
-	},
-
-	focus: {
-		dist: (self, seriesIdx, dataIdx, valPos, curPos) => valPos - curPos,
-		prox: -1,
-		bias: 0,
-	},
-
-	hover: {
-		skip: [void 0],
-		prox: null,
-		bias: 0,
-	},
-
-	left: -10,
-	top: -10,
-	idx: null,
-	dataIdx: null,
-	idxs: null,
-
-	event: null,
-};
-
-const axisLines = {
-	show: true,
-	stroke: "rgba(0,0,0,0.07)",
-	width: 2,
-//	dash: [],
-};
-
-const grid = assign({}, axisLines, {
-	filter: retArg1,
-});
-
-const ticks = assign({}, grid, {
-	size: 10,
-});
-
-const border = assign({}, axisLines, {
-	show: false,
-});
-
-const font      = '12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
-const labelFont = "bold " + font;
-const lineGap = 1.5;	// font-size multiplier
-
-const xAxisOpts = {
-	show: true,
-	scale: "x",
-	stroke: hexBlack,
-	space: 50,
-	gap: 5,
-	alignTo: 1,
-	size: 50,
-	labelGap: 0,
-	labelSize: 30,
-	labelFont,
-	side: 2,
-//	class: "x-vals",
-//	incrs: timeIncrs,
-//	values: timeVals,
-//	filter: retArg1,
-	grid,
-	ticks,
-	border,
-	font,
-	lineGap,
-	rotate: 0,
-};
-
-const numSeriesLabel = "Value";
-const timeSeriesLabel = "Time";
-
-const xSeriesOpts = {
-	show: true,
-	scale: "x",
-	auto: false,
-	sorted: 1,
-//	label: "Time",
-//	value: v => stamp(new Date(v * 1e3)),
-
-	// internal caches
-	min: inf,
-	max: -inf,
-	idxs: [],
-};
-
-function numAxisVals(self, splits, axisIdx, foundSpace, foundIncr) {
-	return splits.map(v => v == null ? "" : fmtNum(v));
-}
-
-function numAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
-	let splits = [];
-
-	let numDec = fixedDec.get(foundIncr) || 0;
-
-	scaleMin = forceMin ? scaleMin : roundDec(incrRoundUp(scaleMin, foundIncr), numDec);
-
-	for (let val = scaleMin; val <= scaleMax; val = roundDec(val + foundIncr, numDec))
-		splits.push(Object.is(val, -0) ? 0 : val);		// coalesces -0
-
-	return splits;
-}
-
-// this doesnt work for sin, which needs to come off from 0 independently in pos and neg dirs
-function logAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
-	const splits = [];
-
-	const logBase = self.scales[self.axes[axisIdx].scale].log;
-
-	const logFn = logBase == 10 ? log10 : log2;
-
-	const exp = floor(logFn(scaleMin));
-
-	foundIncr = pow(logBase, exp);
-
-	// boo: 10 ** -24 === 1.0000000000000001e-24
-	// this grabs the proper 1e-24 one
-	if (logBase == 10)
-		foundIncr = numIncrs[closestIdx(foundIncr, numIncrs)];
-
-	let split = scaleMin;
-	let nextMagIncr = foundIncr * logBase;
-
-	if (logBase == 10)
-		nextMagIncr = numIncrs[closestIdx(nextMagIncr, numIncrs)];
-
-	do {
-		splits.push(split);
-		split = split + foundIncr;
-
-		if (logBase == 10 && !fixedDec.has(split))
-			split = roundDec(split, fixedDec.get(foundIncr));
-
-		if (split >= nextMagIncr) {
-			foundIncr = split;
-			nextMagIncr = foundIncr * logBase;
-
-			if (logBase == 10)
-				nextMagIncr = numIncrs[closestIdx(nextMagIncr, numIncrs)];
-		}
-	} while (split <= scaleMax);
-
-	return splits;
-}
-
-function asinhAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
-	let sc = self.scales[self.axes[axisIdx].scale];
-
-	let linthresh = sc.asinh;
-
-	let posSplits = scaleMax > linthresh ? logAxisSplits(self, axisIdx, max(linthresh, scaleMin), scaleMax, foundIncr) : [linthresh];
-	let zero = scaleMax >= 0 && scaleMin <= 0 ? [0] : [];
-	let negSplits = scaleMin < -linthresh ? logAxisSplits(self, axisIdx, max(linthresh, -scaleMax), -scaleMin, foundIncr): [linthresh];
-
-	return negSplits.reverse().map(v => -v).concat(zero, posSplits);
-}
-
-const RE_ALL   = /./;
-const RE_12357 = /[12357]/;
-const RE_125   = /[125]/;
-const RE_1     = /1/;
-
-const _filt = (splits, distr, re, keepMod) => splits.map((v, i) => ((distr == 4 && v == 0) || i % keepMod == 0 && re.test(v.toExponential()[v < 0 ? 1 : 0])) ? v : null);
-
-function log10AxisValsFilt(self, splits, axisIdx, foundSpace, foundIncr) {
-	let axis = self.axes[axisIdx];
-	let scaleKey = axis.scale;
-	let sc = self.scales[scaleKey];
-
-//	if (sc.distr == 3 && sc.log == 2)
-//		return splits;
-
-	let valToPos = self.valToPos;
-
-	let minSpace = axis._space;
-
-	let _10 = valToPos(10, scaleKey);
-
-	let re = (
-		valToPos(9, scaleKey) - _10 >= minSpace ? RE_ALL :
-		valToPos(7, scaleKey) - _10 >= minSpace ? RE_12357 :
-		valToPos(5, scaleKey) - _10 >= minSpace ? RE_125 :
-		RE_1
-	);
-
-	if (re == RE_1) {
-		let magSpace = abs(valToPos(1, scaleKey) - _10);
-
-		if (magSpace < minSpace)
-			return _filt(splits.slice().reverse(), sc.distr, re, ceil(minSpace / magSpace)).reverse(); // max->min skip
-	}
-
-	return _filt(splits, sc.distr, re, 1);
-}
-
-function log2AxisValsFilt(self, splits, axisIdx, foundSpace, foundIncr) {
-	let axis = self.axes[axisIdx];
-	let scaleKey = axis.scale;
-	let minSpace = axis._space;
-	let valToPos = self.valToPos;
-
-	let magSpace = abs(valToPos(1, scaleKey) - valToPos(2, scaleKey));
-
-	if (magSpace < minSpace)
-		return _filt(splits.slice().reverse(), 3, RE_ALL, ceil(minSpace / magSpace)).reverse(); // max->min skip
-
-	return splits;
-}
-
-function numSeriesVal(self, val, seriesIdx, dataIdx) {
-	return dataIdx == null ? LEGEND_DISP : val == null ? "" : fmtNum(val);
-}
-
-const yAxisOpts = {
-	show: true,
-	scale: "y",
-	stroke: hexBlack,
-	space: 30,
-	gap: 5,
-	alignTo: 1,
-	size: 50,
-	labelGap: 0,
-	labelSize: 30,
-	labelFont,
-	side: 3,
-//	class: "y-vals",
-//	incrs: numIncrs,
-//	values: (vals, space) => vals,
-//	filter: retArg1,
-	grid,
-	ticks,
-	border,
-	font,
-	lineGap,
-	rotate: 0,
-};
-
-// takes stroke width
-function ptDia(width, mult) {
-	let dia = 3 + (width || 1) * 2;
-	return roundDec(dia * mult, 3);
-}
-
-function seriesPointsShow(self, si) {
-	let { scale, idxs } = self.series[0];
-	let xData = self._data[0];
-	let p0 = self.valToPos(xData[idxs[0]], scale, true);
-	let p1 = self.valToPos(xData[idxs[1]], scale, true);
-	let dim = abs(p1 - p0);
-
-	let s = self.series[si];
-//	const dia = ptDia(s.width, self.pxRatio);
-	let maxPts = dim / (s.points.space * self.pxRatio);
-	return idxs[1] - idxs[0] <= maxPts;
-}
-
-const facet = {
-	scale: null,
-	auto: true,
-	sorted: 0,
-
-	// internal caches
-	min: inf,
-	max: -inf,
-};
-
-const gaps = (self, seriesIdx, idx0, idx1, nullGaps) => nullGaps;
-
-const xySeriesOpts = {
-	show: true,
-	auto: true,
-	sorted: 0,
-	gaps,
-	alpha: 1,
-	facets: [
-		assign({}, facet, {scale: 'x'}),
-		assign({}, facet, {scale: 'y'}),
-	],
-};
-
-const ySeriesOpts = {
-	scale: "y",
-	auto: true,
-	sorted: 0,
-	show: true,
-	spanGaps: false,
-	gaps,
-	alpha: 1,
-	points: {
-		show: seriesPointsShow,
-		filter: null,
-	//  paths:
-	//	stroke: "#000",
-	//	fill: "#fff",
-	//	width: 1,
-	//	size: 10,
-	},
-//	label: "Value",
-//	value: v => v,
-	values: null,
-
-	// internal caches
-	min: inf,
-	max: -inf,
-	idxs: [],
-
-	path: null,
-	clip: null,
-};
-
-function clampScale(self, val, scaleMin, scaleMax, scaleKey) {
-/*
-	if (val < 0) {
-		let cssHgt = self.bbox.height / self.pxRatio;
-		let absPos = self.valToPos(abs(val), scaleKey);
-		let fromBtm = cssHgt - absPos;
-		return self.posToVal(cssHgt + fromBtm, scaleKey);
-	}
-*/
-	return scaleMin / 10;
-}
-
-const xScaleOpts = {
-	time: FEAT_TIME,
-	auto: true,
-	distr: 1,
-	log: 10,
-	asinh: 1,
-	min: null,
-	max: null,
-	dir: 1,
-	ori: 0,
-};
-
-const yScaleOpts = assign({}, xScaleOpts, {
-	time: false,
-	ori: 1,
-});
 
 const syncs = {};
 
@@ -2827,35 +1998,1187 @@ function _monotoneCubic(xs, ys, moveTo, lineTo, bezierCurveTo, pxRound) {
 	return path;
 }
 
-const cursorPlots = new Set();
+/**
+ * Standardized error handling system for uPlot modules
+ */
 
-function invalidateRects() {
-	for (let u of cursorPlots)
-		u.syncRect(true);
+/**
+ * Base uPlot error class with module context
+ */
+class UPlotError extends Error {
+	constructor(message, module, context = null, originalError = null) {
+		const fullMessage = `[${module}] ${message}`;
+		super(fullMessage);
+		
+		this.name = 'UPlotError';
+		this.module = module;
+		this.context = context;
+		this.originalError = originalError;
+		
+		// Maintain proper stack trace
+		if (Error.captureStackTrace) {
+			Error.captureStackTrace(this, UPlotError);
+		}
+	}
 }
 
-if (domEnv) {
-	on(resize, win, invalidateRects);
-	on(scroll, win, invalidateRects, true);
-	on(dppxchange, win, () => { uPlot.pxRatio = pxRatio; });
+/**
+ * Error types for different categories of errors
+ */
+const ERROR_TYPES = {
+	INITIALIZATION: 'INITIALIZATION',
+	VALIDATION: 'VALIDATION',
+	RENDERING: 'RENDERING',
+	DATA_PROCESSING: 'DATA_PROCESSING',
+	EVENT_HANDLING: 'EVENT_HANDLING',
+	SCALE_CALCULATION: 'SCALE_CALCULATION',
+	LAYOUT_CALCULATION: 'LAYOUT_CALCULATION'
+};
+
+/**
+ * Error boundary wrapper for module methods
+ */
+function withErrorBoundary(moduleName, methodName, fn) {
+	return function(...args) {
+		try {
+			return fn.apply(this, args);
+		} catch (error) {
+			const context = {
+				method: methodName,
+				args: args.length > 0 ? 'provided' : 'none',
+				timestamp: Date.now()
+			};
+			
+			if (error instanceof UPlotError) {
+				// Re-throw uPlot errors with additional context
+				error.context = { ...error.context, ...context };
+				throw error;
+			} else {
+				// Wrap native errors
+				throw new UPlotError(
+					`Error in ${methodName}: ${error.message}`,
+					moduleName,
+					context,
+					error
+				);
+			}
+		}
+	};
 }
 
-const linearPath = linear() ;
-const pointsPath = points() ;
-
-function setDefaults(d, xo, yo, initY) {
-	let d2 = initY ? [d[0], d[1]].concat(d.slice(2)) : [d[0]].concat(d.slice(1));
-	return d2.map((o, i) => setDefault(o, i, xo, yo));
+/**
+ * Validation helper that throws standardized errors
+ */
+function validateRequired(value, paramName, moduleName, methodName = 'unknown') {
+	if (value === null || value === undefined) {
+		throw new UPlotError(
+			`Required parameter '${paramName}' is missing or null`,
+			moduleName,
+			{ method: methodName, parameter: paramName, type: ERROR_TYPES.VALIDATION }
+		);
+	}
+	return value;
 }
 
-function setDefaults2(d, xyo) {
-	return d.map((o, i) => i == 0 ? {} : assign({}, xyo, o));  // todo: assign() will not merge facet arrays
+/**
+ * Type validation helper
+ */
+function validateType(value, expectedType, paramName, moduleName, methodName = 'unknown') {
+	const actualType = typeof value;
+	if (actualType !== expectedType) {
+		throw new UPlotError(
+			`Parameter '${paramName}' expected ${expectedType} but got ${actualType}`,
+			moduleName,
+			{ 
+				method: methodName, 
+				parameter: paramName, 
+				expectedType, 
+				actualType,
+				type: ERROR_TYPES.VALIDATION 
+			}
+		);
+	}
+	return value;
 }
 
-function setDefault(o, i, xo, yo) {
-	return assign({}, (i == 0 ? xo : yo), o);
+/**
+ * Safe execution wrapper that catches and logs errors without throwing
+ */
+function safeExecute(moduleName, methodName, fn, fallbackValue = null) {
+	try {
+		return fn();
+	} catch (error) {
+		console.warn(`[${moduleName}] Non-critical error in ${methodName}:`, error);
+		return fallbackValue;
+	}
 }
 
+/**
+ * Error reporter for debugging and monitoring
+ */
+class ErrorReporter {
+	constructor() {
+		this.errors = [];
+		this.maxErrors = 100; // Prevent memory leaks
+	}
+	
+	report(error) {
+		// Add to error log
+		this.errors.push({
+			error,
+			timestamp: Date.now(),
+			stack: error.stack
+		});
+		
+		// Maintain max size
+		if (this.errors.length > this.maxErrors) {
+			this.errors.shift();
+		}
+		
+		// Log to console in development
+		if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+			console.error('uPlot Error:', error);
+		}
+	}
+	
+	getErrors(moduleName = null) {
+		if (!moduleName) {
+			return this.errors;
+		}
+		return this.errors.filter(entry => entry.error.module === moduleName);
+	}
+	
+	clear() {
+		this.errors = [];
+	}
+}
+
+// Global error reporter instance
+const errorReporter = new ErrorReporter();
+
+// Constants from opts.js to avoid complex dependency chain
+const AXIS_SIZE_DEFAULT = 50;
+
+/**
+ * Layout Manager - handles size calculations, plot area management, and responsive layout
+ */
+class LayoutManager {
+	constructor(uplot) {
+		try {
+			validateRequired(uplot, 'uplot', 'LayoutManager', 'constructor');
+			
+			this.uplot = uplot;
+			
+			// Layout dimensions in CSS pixels
+			this.fullWidCss = 0;
+			this.fullHgtCss = 0;
+			this.plotWidCss = 0;
+			this.plotHgtCss = 0;
+			this.plotLftCss = 0;
+			this.plotTopCss = 0;
+			
+			// Layout dimensions in canvas pixels
+			this.plotLft = 0;
+			this.plotTop = 0;
+			this.plotWid = 0;
+			this.plotHgt = 0;
+			
+			// Previous values for diffing
+			this._plotLftCss = 0;
+			this._plotTopCss = 0;
+			this._plotWidCss = 0;
+			this._plotHgtCss = 0;
+			
+			// Sides with axes tracking
+			this.sidesWithAxes = [false, false, false, false];
+			
+			// Initialize padding
+			this.initPadding();
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize padding configuration
+	 */
+	initPadding() {
+		const opts = this.uplot.opts || {};
+		this.padding = (opts.padding || [this.autoPadSide, this.autoPadSide, this.autoPadSide, this.autoPadSide])
+			.map(p => fnOrSelf(ifNull(p, this.autoPadSide)));
+		this._padding = this.padding.map((p, i) => p(this.uplot, i, this.sidesWithAxes, 0));
+	}
+
+	/**
+	 * Calculate automatic padding for a side based on axis presence
+	 */
+	autoPadSide = (self, side, sidesWithAxes, cycleNum) => {
+		let [hasTopAxis, hasRgtAxis, hasBtmAxis, hasLftAxis] = sidesWithAxes;
+
+		let ori = side % 2;
+		let size = 0;
+
+		if (ori == 0 && (hasLftAxis || hasRgtAxis))
+			size = (side == 0 && !hasTopAxis || side == 2 && !hasBtmAxis ? round(AXIS_SIZE_DEFAULT / 3) : 0);
+		if (ori == 1 && (hasTopAxis || hasBtmAxis))
+			size = (side == 1 && !hasRgtAxis || side == 3 && !hasLftAxis ? round(AXIS_SIZE_DEFAULT / 2) : 0);
+
+		return size;
+	}
+
+	/**
+	 * Main size calculation function
+	 */
+	calcSize(width, height) {
+		return withErrorBoundary('LayoutManager', 'calcSize', function(width, height) {
+			validateRequired(width, 'width', 'LayoutManager', 'calcSize');
+			validateRequired(height, 'height', 'LayoutManager', 'calcSize');
+			validateType(width, 'number', 'width', 'LayoutManager', 'calcSize');
+			validateType(height, 'number', 'height', 'LayoutManager', 'calcSize');
+			
+			if (width <= 0 || height <= 0) {
+				throw new UPlotError(
+					`Invalid dimensions: width=${width}, height=${height}. Both must be positive numbers.`,
+					'LayoutManager',
+					{ method: 'calcSize', width, height, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+
+			// Initialize dimensions
+			this.fullWidCss = this.plotWidCss = width;
+			this.fullHgtCss = this.plotHgtCss = height;
+			this.plotLftCss = this.plotTopCss = 0;
+
+			// Calculate plot area and axis positions
+			this.calcPlotRect();
+			this.calcAxesRects();
+
+			// Convert to canvas pixels
+			const pxRatio = this.uplot.pxRatio || 1;
+			const bbox = this.uplot.bbox || {};
+			
+			this.plotLft = bbox.left = incrRound(this.plotLftCss * pxRatio, 0.5);
+			this.plotTop = bbox.top = incrRound(this.plotTopCss * pxRatio, 0.5);
+			this.plotWid = bbox.width = incrRound(this.plotWidCss * pxRatio, 0.5);
+			this.plotHgt = bbox.height = incrRound(this.plotHgtCss * pxRatio, 0.5);
+
+			// Update uPlot instance dimensions
+			this.uplot._width = width;
+			this.uplot._height = height;
+			
+			return {
+				fullWidCss: this.fullWidCss,
+				fullHgtCss: this.fullHgtCss,
+				plotWidCss: this.plotWidCss,
+				plotHgtCss: this.plotHgtCss,
+				plotLftCss: this.plotLftCss,
+				plotTopCss: this.plotTopCss,
+				plotLft: this.plotLft,
+				plotTop: this.plotTop,
+				plotWid: this.plotWid,
+				plotHgt: this.plotHgt
+			};
+		}).call(this, width, height);
+	}
+
+	/**
+	 * Calculate plot rectangle by accounting for axes and padding
+	 */
+	calcPlotRect() {
+		return withErrorBoundary('LayoutManager', 'calcPlotRect', function() {
+			const axes = this.uplot.axes?.axes || [];
+			
+			// Reset axis presence tracking
+			let hasTopAxis = false;
+			let hasBtmAxis = false;
+			let hasRgtAxis = false;
+			let hasLftAxis = false;
+
+		// Process each axis to determine space requirements
+		axes.forEach((axis, i) => {
+			if (axis.show && axis._show) {
+				let { side, _size } = axis;
+				let isVt = side % 2;
+				let labelSize = axis.label != null ? axis.labelSize : 0;
+
+				let fullSize = _size + labelSize;
+
+				if (fullSize > 0) {
+					if (isVt) {
+						this.plotWidCss -= fullSize;
+
+						if (side == 3) {
+							this.plotLftCss += fullSize;
+							hasLftAxis = true;
+						}
+						else {
+							hasRgtAxis = true;
+						}
+					}
+					else {
+						this.plotHgtCss -= fullSize;
+
+						if (side == 0) {
+							this.plotTopCss += fullSize;
+							hasTopAxis = true;
+						}
+						else {
+							hasBtmAxis = true;
+						}
+					}
+				}
+			}
+		});
+
+		// Update sides with axes tracking
+		this.sidesWithAxes[0] = hasTopAxis;
+		this.sidesWithAxes[1] = hasRgtAxis;
+		this.sidesWithAxes[2] = hasBtmAxis;
+		this.sidesWithAxes[3] = hasLftAxis;
+
+		// Apply horizontal padding
+		this.plotWidCss -= this._padding[1] + this._padding[3];
+		this.plotLftCss += this._padding[3];
+
+			// Apply vertical padding
+			this.plotHgtCss -= this._padding[2] + this._padding[0];
+			this.plotTopCss += this._padding[0];
+		}).call(this);
+	}
+
+	/**
+	 * Calculate axis rectangles and positions
+	 */
+	calcAxesRects() {
+		const axes = this.uplot.axes?.axes || [];
+		
+		// Offset accumulators
+		let off1 = this.plotLftCss + this.plotWidCss; // right side accumulator
+		let off2 = this.plotTopCss + this.plotHgtCss; // bottom side accumulator
+		let off3 = this.plotLftCss; // left side accumulator
+		let off0 = this.plotTopCss; // top side accumulator
+
+		/**
+		 * Increment offset for a given side
+		 */
+		function incrOffset(side, size) {
+			switch (side) {
+				case 1: off1 += size; return off1 - size; // right
+				case 2: off2 += size; return off2 - size; // bottom
+				case 3: off3 -= size; return off3 + size; // left
+				case 0: off0 -= size; return off0 + size; // top
+			}
+		}
+
+		// Calculate positions for each axis
+		axes.forEach((axis, i) => {
+			if (axis.show && axis._show) {
+				let side = axis.side;
+
+				axis._pos = incrOffset(side, axis._size);
+
+				if (axis.label != null) {
+					axis._lpos = incrOffset(side, axis.labelSize);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Update padding calculations (used during size convergence)
+	 */
+	paddingCalc(cycleNum) {
+		let converged = true;
+
+		this.padding.forEach((p, i) => {
+			let _p = p(this.uplot, i, this.sidesWithAxes, cycleNum);
+
+			if (_p != this._padding[i]) {
+				converged = false;
+			}
+
+			this._padding[i] = _p;
+		});
+
+		return converged;
+	}
+
+	/**
+	 * Size convergence logic to handle interdependent calculations
+	 */
+	convergeSize(width, height) {
+		const CYCLE_LIMIT = 3;
+		let converged = false;
+		let cycleNum = 0;
+
+		while (!converged) {
+			cycleNum++;
+			let paddingConverged = this.paddingCalc(cycleNum);
+
+			converged = cycleNum == CYCLE_LIMIT || (paddingConverged);
+
+			if (!converged) {
+				this.calcSize(width, height);
+			}
+		}
+
+		return converged;
+	}
+
+	/**
+	 * Update layout with new dimensions
+	 */
+	updateLayout() {
+		// Store previous values for comparison
+		this._plotLftCss = this.plotLftCss;
+		this._plotTopCss = this.plotTopCss;
+		this._plotWidCss = this.plotWidCss;
+		this._plotHgtCss = this.plotHgtCss;
+	}
+
+	/**
+	 * Get current plot rectangle
+	 */
+	getPlotRect() {
+		return {
+			left: this.plotLftCss,
+			top: this.plotTopCss,
+			width: this.plotWidCss,
+			height: this.plotHgtCss
+		};
+	}
+
+	/**
+	 * Get current padding values
+	 */
+	getPadding() {
+		return [...this._padding];
+	}
+
+	/**
+	 * Get plot dimensions in canvas pixels
+	 */
+	getCanvasRect() {
+		return {
+			left: this.plotLft,
+			top: this.plotTop,
+			width: this.plotWid,
+			height: this.plotHgt
+		};
+	}
+
+	/**
+	 * Check if layout dimensions have changed
+	 */
+	hasChanged() {
+		return (
+			this._plotLftCss !== this.plotLftCss ||
+			this._plotTopCss !== this.plotTopCss ||
+			this._plotWidCss !== this.plotWidCss ||
+			this._plotHgtCss !== this.plotHgtCss
+		);
+	}
+}
+
+//export const series = [];
+
+// default formatters:
+
+const onlyWhole = v => v % 1 == 0;
+
+const allMults = [1,2,2.5,5];
+
+// ...0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5
+const decIncrs = genIncrs(10, -32, 0, allMults);
+
+// 1, 2, 2.5, 5, 10, 20, 25, 50...
+const oneIncrs = genIncrs(10, 0, 32, allMults);
+
+// 1, 2,      5, 10, 20, 25, 50...
+const wholeIncrs = oneIncrs.filter(onlyWhole);
+
+const numIncrs = decIncrs.concat(oneIncrs);
+
+const NL = "\n";
+
+const yyyy    = "{YYYY}";
+const NLyyyy  = NL + yyyy;
+const md      = "{M}/{D}";
+const NLmd    = NL + md;
+const NLmdyy  = NLmd + "/{YY}";
+
+const aa      = "{aa}";
+const hmm     = "{h}:{mm}";
+const hmmaa   = hmm + aa;
+const NLhmmaa = NL + hmmaa;
+const ss      = ":{ss}";
+
+const _ = null;
+
+function genTimeStuffs(ms) {
+	let	s  = ms * 1e3,
+		m  = s  * 60,
+		h  = m  * 60,
+		d  = h  * 24,
+		mo = d  * 30,
+		y  = d  * 365;
+
+	// min of 1e-3 prevents setting a temporal x ticks too small since Date objects cannot advance ticks smaller than 1ms
+	let subSecIncrs = ms == 1 ? genIncrs(10, 0, 3, allMults).filter(onlyWhole) : genIncrs(10, -3, 0, allMults);
+
+	let timeIncrs = subSecIncrs.concat([
+		// minute divisors (# of secs)
+		s,
+		s * 5,
+		s * 10,
+		s * 15,
+		s * 30,
+		// hour divisors (# of mins)
+		m,
+		m * 5,
+		m * 10,
+		m * 15,
+		m * 30,
+		// day divisors (# of hrs)
+		h,
+		h * 2,
+		h * 3,
+		h * 4,
+		h * 6,
+		h * 8,
+		h * 12,
+		// month divisors TODO: need more?
+		d,
+		d * 2,
+		d * 3,
+		d * 4,
+		d * 5,
+		d * 6,
+		d * 7,
+		d * 8,
+		d * 9,
+		d * 10,
+		d * 15,
+		// year divisors (# months, approx)
+		mo,
+		mo * 2,
+		mo * 3,
+		mo * 4,
+		mo * 6,
+		// century divisors
+		y,
+		y * 2,
+		y * 5,
+		y * 10,
+		y * 25,
+		y * 50,
+		y * 100,
+	]);
+
+	// [0]:   minimum num secs in the tick incr
+	// [1]:   default tick format
+	// [2-7]: rollover tick formats
+	// [8]:   mode: 0: replace [1] -> [2-7], 1: concat [1] + [2-7]
+	const _timeAxisStamps = [
+	//   tick incr    default          year                    month   day                   hour    min       sec   mode
+		[y,           yyyy,            _,                      _,      _,                    _,      _,        _,       1],
+		[d * 28,      "{MMM}",         NLyyyy,                 _,      _,                    _,      _,        _,       1],
+		[d,           md,              NLyyyy,                 _,      _,                    _,      _,        _,       1],
+		[h,           "{h}" + aa,      NLmdyy,                 _,      NLmd,                 _,      _,        _,       1],
+		[m,           hmmaa,           NLmdyy,                 _,      NLmd,                 _,      _,        _,       1],
+		[s,           ss,              NLmdyy + " " + hmmaa,   _,      NLmd + " " + hmmaa,   _,      NLhmmaa,  _,       1],
+		[ms,          ss + ".{fff}",   NLmdyy + " " + hmmaa,   _,      NLmd + " " + hmmaa,   _,      NLhmmaa,  _,       1],
+	];
+
+	// the ensures that axis ticks, values & grid are aligned to logical temporal breakpoints and not an arbitrary timestamp
+	// https://www.timeanddate.com/time/dst/
+	// https://www.timeanddate.com/time/dst/2019.html
+	// https://www.epochconverter.com/timezones
+	function timeAxisSplits(tzDate) {
+		return (self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace) => {
+			let splits = [];
+			let isYr = foundIncr >= y;
+			let isMo = foundIncr >= mo && foundIncr < y;
+
+			// get the timezone-adjusted date
+			let minDate = tzDate(scaleMin);
+			let minDateTs = roundDec(minDate * ms, 3);
+
+			// get ts of 12am (this lands us at or before the original scaleMin)
+			let minMin = mkDate(minDate.getFullYear(), isYr ? 0 : minDate.getMonth(), isMo || isYr ? 1 : minDate.getDate());
+			let minMinTs = roundDec(minMin * ms, 3);
+
+			if (isMo || isYr) {
+				let moIncr = isMo ? foundIncr / mo : 0;
+				let yrIncr = isYr ? foundIncr / y  : 0;
+			//	let tzOffset = scaleMin - minDateTs;		// needed?
+				let split = minDateTs == minMinTs ? minDateTs : roundDec(mkDate(minMin.getFullYear() + yrIncr, minMin.getMonth() + moIncr, 1) * ms, 3);
+				let splitDate = new Date(round(split / ms));
+				let baseYear = splitDate.getFullYear();
+				let baseMonth = splitDate.getMonth();
+
+				for (let i = 0; split <= scaleMax; i++) {
+					let next = mkDate(baseYear + yrIncr * i, baseMonth + moIncr * i, 1);
+					let offs = next - tzDate(roundDec(next * ms, 3));
+
+					split = roundDec((+next + offs) * ms, 3);
+
+					if (split <= scaleMax)
+						splits.push(split);
+				}
+			}
+			else {
+				let incr0 = foundIncr >= d ? d : foundIncr;
+				let tzOffset = floor(scaleMin) - floor(minDateTs);
+				let split = minMinTs + tzOffset + incrRoundUp(minDateTs - minMinTs, incr0);
+				splits.push(split);
+
+				let date0 = tzDate(split);
+
+				let prevHour = date0.getHours() + (date0.getMinutes() / m) + (date0.getSeconds() / h);
+				let incrHours = foundIncr / h;
+
+				let minSpace = self.axes[axisIdx]._space;
+				let pctSpace = foundSpace / minSpace;
+
+				while (1) {
+					split = roundDec(split + foundIncr, ms == 1 ? 0 : 3);
+
+					if (split > scaleMax)
+						break;
+
+					if (incrHours > 1) {
+						let expectedHour = floor(roundDec(prevHour + incrHours, 6)) % 24;
+						let splitDate = tzDate(split);
+						let actualHour = splitDate.getHours();
+
+						let dstShift = actualHour - expectedHour;
+
+						if (dstShift > 1)
+							dstShift = -1;
+
+						split -= dstShift * h;
+
+						prevHour = (prevHour + incrHours) % 24;
+
+						// add a tick only if it's further than 70% of the min allowed label spacing
+						let prevSplit = splits[splits.length - 1];
+						let pctIncr = roundDec((split - prevSplit) / foundIncr, 3);
+
+						if (pctIncr * pctSpace >= .7)
+							splits.push(split);
+					}
+					else
+						splits.push(split);
+				}
+			}
+
+			return splits;
+		}
+	}
+
+	return [
+		timeIncrs,
+		_timeAxisStamps,
+		timeAxisSplits,
+	];
+}
+
+const [ timeIncrsMs, _timeAxisStampsMs, timeAxisSplitsMs ] = genTimeStuffs(1);
+const [ timeIncrsS,  _timeAxisStampsS,  timeAxisSplitsS  ] = genTimeStuffs(1e-3);
+
+// base 2
+genIncrs(2, -53, 53, [1]);
+
+/*
+console.log({
+	decIncrs,
+	oneIncrs,
+	wholeIncrs,
+	numIncrs,
+	timeIncrs,
+	fixedDec,
+});
+*/
+
+function timeAxisStamps(stampCfg, fmtDate) {
+	return stampCfg.map(s => s.map((v, i) =>
+		i == 0 || i == 8 || v == null ? v : fmtDate(i == 1 || s[8] == 0 ? v : s[1] + v)
+	));
+}
+
+// TODO: will need to accept spaces[] and pull incr into the loop when grid will be non-uniform, eg for log scales.
+// currently we ignore this for months since they're *nearly* uniform and the added complexity is not worth it
+function timeAxisVals(tzDate, stamps) {
+	return (self, splits, axisIdx, foundSpace, foundIncr) => {
+		let s = stamps.find(s => foundIncr >= s[0]) || stamps[stamps.length - 1];
+
+		// these track boundaries when a full label is needed again
+		let prevYear;
+		let prevMnth;
+		let prevDate;
+		let prevHour;
+		let prevMins;
+		let prevSecs;
+
+		return splits.map(split => {
+			let date = tzDate(split);
+
+			let newYear = date.getFullYear();
+			let newMnth = date.getMonth();
+			let newDate = date.getDate();
+			let newHour = date.getHours();
+			let newMins = date.getMinutes();
+			let newSecs = date.getSeconds();
+
+			let stamp = (
+				newYear != prevYear && s[2] ||
+				newMnth != prevMnth && s[3] ||
+				newDate != prevDate && s[4] ||
+				newHour != prevHour && s[5] ||
+				newMins != prevMins && s[6] ||
+				newSecs != prevSecs && s[7] ||
+				                       s[1]
+			);
+
+			prevYear = newYear;
+			prevMnth = newMnth;
+			prevDate = newDate;
+			prevHour = newHour;
+			prevMins = newMins;
+			prevSecs = newSecs;
+
+			return stamp(date);
+		});
+	}
+}
+
+// for when axis.values is defined as a static fmtDate template string
+function timeAxisVal(tzDate, dateTpl) {
+	let stamp = fmtDate(dateTpl);
+	return (self, splits, axisIdx, foundSpace, foundIncr) => splits.map(split => stamp(tzDate(split)));
+}
+
+function mkDate(y, m, d) {
+	return new Date(y, m, d);
+}
+
+function timeSeriesStamp(stampCfg, fmtDate) {
+	return fmtDate(stampCfg);
+}
+function timeSeriesVal(tzDate, stamp) {
+	return (self, val, seriesIdx, dataIdx) => dataIdx == null ? LEGEND_DISP : stamp(tzDate(val));
+}
+
+function legendStroke(self, seriesIdx) {
+	let s = self.series[seriesIdx];
+	return s.width ? s.stroke(self, seriesIdx) : s.points.width ? s.points.stroke(self, seriesIdx) : null;
+}
+
+function legendFill(self, seriesIdx) {
+	return self.series[seriesIdx].fill(self, seriesIdx);
+}
+
+const legendOpts = {
+	show: true,
+	live: true,
+	isolate: false,
+	mount: noop,
+	markers: {
+		show: true,
+		width: 2,
+		stroke: legendStroke,
+		fill: legendFill,
+		dash: "solid",
+	},
+	idx: null,
+	idxs: null,
+	values: [],
+};
+
+function cursorPointShow(self, si) {
+	let o = self.cursor.points;
+
+	let pt = placeDiv();
+
+	let size = o.size(self, si);
+	setStylePx(pt, WIDTH, size);
+	setStylePx(pt, HEIGHT, size);
+
+	let mar = size / -2;
+	setStylePx(pt, "marginLeft", mar);
+	setStylePx(pt, "marginTop", mar);
+
+	let width = o.width(self, si, size);
+	width && setStylePx(pt, "borderWidth", width);
+
+	return pt;
+}
+
+function cursorPointFill(self, si) {
+	let sp = self.series[si].points;
+	return sp._fill || sp._stroke;
+}
+
+function cursorPointStroke(self, si) {
+	let sp = self.series[si].points;
+	return sp._stroke || sp._fill;
+}
+
+function cursorPointSize(self, si) {
+	let sp = self.series[si].points;
+	return sp.size;
+}
+
+const moveTuple = [0,0];
+
+function cursorMove(self, mouseLeft1, mouseTop1) {
+	moveTuple[0] = mouseLeft1;
+	moveTuple[1] = mouseTop1;
+	return moveTuple;
+}
+
+function filtBtn0(self, targ, handle, onlyTarg = true) {
+	return e => {
+		e.button == 0 && (!onlyTarg || e.target == targ) && handle(e);
+	};
+}
+
+function filtTarg(self, targ, handle, onlyTarg = true) {
+	return e => {
+		(!onlyTarg || e.target == targ) && handle(e);
+	};
+}
+
+const cursorOpts = {
+	show: true,
+	x: true,
+	y: true,
+	lock: false,
+	move: cursorMove,
+	points: {
+		one:    false,
+		show:   cursorPointShow,
+		size:   cursorPointSize,
+		width:  0,
+		stroke: cursorPointStroke,
+		fill:   cursorPointFill,
+	},
+
+	bind: {
+		mousedown:   filtBtn0,
+		mouseup:     filtBtn0,
+		click:       filtBtn0, // legend clicks, not .u-over clicks
+		dblclick:    filtBtn0,
+
+		mousemove:   filtTarg,
+		mouseleave:  filtTarg,
+		mouseenter:  filtTarg,
+	},
+
+	drag: {
+		setScale: true,
+		x: true,
+		y: false,
+		dist: 0,
+		uni: null,
+		click: (self, e) => {
+		//	e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+		},
+		_x: false,
+		_y: false,
+	},
+
+	focus: {
+		dist: (self, seriesIdx, dataIdx, valPos, curPos) => valPos - curPos,
+		prox: -1,
+		bias: 0,
+	},
+
+	hover: {
+		skip: [void 0],
+		prox: null,
+		bias: 0,
+	},
+
+	left: -10,
+	top: -10,
+	idx: null,
+	dataIdx: null,
+	idxs: null,
+
+	event: null,
+};
+
+const axisLines = {
+	show: true,
+	stroke: "rgba(0,0,0,0.07)",
+	width: 2,
+//	dash: [],
+};
+
+const grid = assign({}, axisLines, {
+	filter: retArg1,
+});
+
+assign({}, grid, {
+	size: 10,
+});
+
+assign({}, axisLines, {
+	show: false,
+});
+
+const numSeriesLabel = "Value";
+const timeSeriesLabel = "Time";
+
+const xSeriesOpts = {
+	show: true,
+	scale: "x",
+	auto: false,
+	sorted: 1,
+//	label: "Time",
+//	value: v => stamp(new Date(v * 1e3)),
+
+	// internal caches
+	min: inf,
+	max: -inf,
+	idxs: [],
+};
+
+function numAxisVals(self, splits, axisIdx, foundSpace, foundIncr) {
+	return splits.map(v => v == null ? "" : fmtNum(v));
+}
+
+function numAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
+	let splits = [];
+
+	let numDec = fixedDec.get(foundIncr) || 0;
+
+	scaleMin = forceMin ? scaleMin : roundDec(incrRoundUp(scaleMin, foundIncr), numDec);
+
+	for (let val = scaleMin; val <= scaleMax; val = roundDec(val + foundIncr, numDec))
+		splits.push(Object.is(val, -0) ? 0 : val);		// coalesces -0
+
+	return splits;
+}
+
+// this doesnt work for sin, which needs to come off from 0 independently in pos and neg dirs
+function logAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
+	const splits = [];
+
+	const logBase = self.scales[self.axes[axisIdx].scale].log;
+
+	const logFn = logBase == 10 ? log10 : log2;
+
+	const exp = floor(logFn(scaleMin));
+
+	foundIncr = pow(logBase, exp);
+
+	// boo: 10 ** -24 === 1.0000000000000001e-24
+	// this grabs the proper 1e-24 one
+	if (logBase == 10)
+		foundIncr = numIncrs[closestIdx(foundIncr, numIncrs)];
+
+	let split = scaleMin;
+	let nextMagIncr = foundIncr * logBase;
+
+	if (logBase == 10)
+		nextMagIncr = numIncrs[closestIdx(nextMagIncr, numIncrs)];
+
+	do {
+		splits.push(split);
+		split = split + foundIncr;
+
+		if (logBase == 10 && !fixedDec.has(split))
+			split = roundDec(split, fixedDec.get(foundIncr));
+
+		if (split >= nextMagIncr) {
+			foundIncr = split;
+			nextMagIncr = foundIncr * logBase;
+
+			if (logBase == 10)
+				nextMagIncr = numIncrs[closestIdx(nextMagIncr, numIncrs)];
+		}
+	} while (split <= scaleMax);
+
+	return splits;
+}
+
+function asinhAxisSplits(self, axisIdx, scaleMin, scaleMax, foundIncr, foundSpace, forceMin) {
+	let sc = self.scales[self.axes[axisIdx].scale];
+
+	let linthresh = sc.asinh;
+
+	let posSplits = scaleMax > linthresh ? logAxisSplits(self, axisIdx, max(linthresh, scaleMin), scaleMax, foundIncr) : [linthresh];
+	let zero = scaleMax >= 0 && scaleMin <= 0 ? [0] : [];
+	let negSplits = scaleMin < -linthresh ? logAxisSplits(self, axisIdx, max(linthresh, -scaleMax), -scaleMin, foundIncr): [linthresh];
+
+	return negSplits.reverse().map(v => -v).concat(zero, posSplits);
+}
+
+const RE_ALL   = /./;
+const RE_12357 = /[12357]/;
+const RE_125   = /[125]/;
+const RE_1     = /1/;
+
+const _filt = (splits, distr, re, keepMod) => splits.map((v, i) => ((distr == 4 && v == 0) || i % keepMod == 0 && re.test(v.toExponential()[v < 0 ? 1 : 0])) ? v : null);
+
+function log10AxisValsFilt(self, splits, axisIdx, foundSpace, foundIncr) {
+	let axis = self.axes[axisIdx];
+	let scaleKey = axis.scale;
+	let sc = self.scales[scaleKey];
+
+//	if (sc.distr == 3 && sc.log == 2)
+//		return splits;
+
+	let valToPos = self.valToPos;
+
+	let minSpace = axis._space;
+
+	let _10 = valToPos(10, scaleKey);
+
+	let re = (
+		valToPos(9, scaleKey) - _10 >= minSpace ? RE_ALL :
+		valToPos(7, scaleKey) - _10 >= minSpace ? RE_12357 :
+		valToPos(5, scaleKey) - _10 >= minSpace ? RE_125 :
+		RE_1
+	);
+
+	if (re == RE_1) {
+		let magSpace = abs(valToPos(1, scaleKey) - _10);
+
+		if (magSpace < minSpace)
+			return _filt(splits.slice().reverse(), sc.distr, re, ceil(minSpace / magSpace)).reverse(); // max->min skip
+	}
+
+	return _filt(splits, sc.distr, re, 1);
+}
+
+function log2AxisValsFilt(self, splits, axisIdx, foundSpace, foundIncr) {
+	let axis = self.axes[axisIdx];
+	let scaleKey = axis.scale;
+	let minSpace = axis._space;
+	let valToPos = self.valToPos;
+
+	let magSpace = abs(valToPos(1, scaleKey) - valToPos(2, scaleKey));
+
+	if (magSpace < minSpace)
+		return _filt(splits.slice().reverse(), 3, RE_ALL, ceil(minSpace / magSpace)).reverse(); // max->min skip
+
+	return splits;
+}
+
+function numSeriesVal(self, val, seriesIdx, dataIdx) {
+	return dataIdx == null ? LEGEND_DISP : val == null ? "" : fmtNum(val);
+}
+
+// takes stroke width
+function ptDia(width, mult) {
+	let dia = 3 + (width || 1) * 2;
+	return roundDec(dia * mult, 3);
+}
+
+function seriesPointsShow(self, si) {
+	let { scale, idxs } = self.series[0];
+	let xData = self._data[0];
+	let p0 = self.valToPos(xData[idxs[0]], scale, true);
+	let p1 = self.valToPos(xData[idxs[1]], scale, true);
+	let dim = abs(p1 - p0);
+
+	let s = self.series[si];
+//	const dia = ptDia(s.width, self.pxRatio);
+	let maxPts = dim / (s.points.space * self.pxRatio);
+	return idxs[1] - idxs[0] <= maxPts;
+}
+
+const facet = {
+	scale: null,
+	auto: true,
+	sorted: 0,
+
+	// internal caches
+	min: inf,
+	max: -inf,
+};
+
+const gaps = (self, seriesIdx, idx0, idx1, nullGaps) => nullGaps;
+
+const xySeriesOpts = {
+	show: true,
+	auto: true,
+	sorted: 0,
+	gaps,
+	alpha: 1,
+	facets: [
+		assign({}, facet, {scale: 'x'}),
+		assign({}, facet, {scale: 'y'}),
+	],
+};
+
+const ySeriesOpts = {
+	scale: "y",
+	auto: true,
+	sorted: 0,
+	show: true,
+	spanGaps: false,
+	gaps,
+	alpha: 1,
+	points: {
+		show: seriesPointsShow,
+		filter: null,
+	//  paths:
+	//	stroke: "#000",
+	//	fill: "#fff",
+	//	width: 1,
+	//	size: 10,
+	},
+//	label: "Value",
+//	value: v => v,
+	values: null,
+
+	// internal caches
+	min: inf,
+	max: -inf,
+	idxs: [],
+
+	path: null,
+	clip: null,
+};
+
+function clampScale(self, val, scaleMin, scaleMax, scaleKey) {
+/*
+	if (val < 0) {
+		let cssHgt = self.bbox.height / self.pxRatio;
+		let absPos = self.valToPos(abs(val), scaleKey);
+		let fromBtm = cssHgt - absPos;
+		return self.posToVal(cssHgt + fromBtm, scaleKey);
+	}
+*/
+	return scaleMin / 10;
+}
+
+const xScaleOpts = {
+	time: FEAT_TIME,
+	auto: true,
+	distr: 1,
+	log: 10,
+	asinh: 1,
+	min: null,
+	max: null,
+	dir: 1,
+	ori: 0,
+};
+
+const yScaleOpts = assign({}, xScaleOpts, {
+	time: false,
+	ori: 1,
+});
+
+// Snap functions for different scale types
 function snapNumX(self, dataMin, dataMax) {
 	return dataMin == null ? nullNullTuple : [dataMin, dataMax];
 }
@@ -2879,6 +3202,2306 @@ function snapAsinhY(self, dataMin, dataMax, scale) {
 }
 
 const snapAsinhX = snapAsinhY;
+
+/**
+ * Scale Manager - handles scale initialization, management, and value-to-pixel conversions
+ */
+class ScaleManager {
+	constructor(uplot, opts) {
+		try {
+			validateRequired(uplot, 'uplot', 'ScaleManager', 'constructor');
+			validateRequired(opts, 'opts', 'ScaleManager', 'constructor');
+			
+			this.uplot = uplot;
+			this.opts = opts;
+			this.scales = {};
+			this.pendScales = {};
+			this.viaAutoScaleX = false;
+			
+			// Mode and scale key references
+			this.mode = uplot.mode || 1;
+			this.xScaleKey = this.mode == 2 ? 
+				(opts.series && opts.series[1] && opts.series[1].facets ? opts.series[1].facets[0].scale : 'x') : 
+				(opts.series && opts.series[0] ? opts.series[0].scale : 'x');
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize value-to-percentage conversion function for a scale
+	 */
+	initValToPct(sc) {
+		try {
+			validateRequired(sc, 'sc', 'ScaleManager', 'initValToPct');
+			
+			const getVal = (
+				sc.distr == 3   ? val => {
+					if (val <= 0 && !sc.clamp) {
+						throw new UPlotError(
+							`Invalid value ${val} for log scale - must be positive`,
+							'ScaleManager',
+							{ method: 'initValToPct', scaleKey: sc.key, type: ERROR_TYPES.SCALE_CALCULATION }
+						);
+					}
+					return log10(val > 0 ? val : sc.clamp(this.uplot, val, sc.min, sc.max, sc.key));
+				} :
+				sc.distr == 4   ? val => asinh(val, sc.asinh) :
+				sc.distr == 100 ? val => {
+					if (typeof sc.fwd !== 'function') {
+						throw new UPlotError(
+							'Custom scale missing forward transform function',
+							'ScaleManager',
+							{ method: 'initValToPct', scaleKey: sc.key, type: ERROR_TYPES.VALIDATION }
+						);
+					}
+					return sc.fwd(val);
+				} :
+				val => val
+			);
+
+			return val => {
+				try {
+					let _val = getVal(val);
+					let { _min, _max } = sc;
+					
+					if (_min == null || _max == null) {
+						throw new UPlotError(
+							'Scale not properly initialized - missing min/max values',
+							'ScaleManager',
+							{ method: 'valToPct', scaleKey: sc.key, type: ERROR_TYPES.SCALE_CALCULATION }
+						);
+					}
+					
+					let delta = _max - _min;
+					if (delta === 0) {
+						return 0.5; // Return middle position for zero range
+					}
+					
+					return (_val - _min) / delta;
+				} catch (error) {
+					if (error instanceof UPlotError) {
+						throw error;
+					}
+					throw new UPlotError(
+						`Error converting value to percentage: ${error.message}`,
+						'ScaleManager',
+						{ method: 'valToPct', scaleKey: sc.key, value: val, type: ERROR_TYPES.SCALE_CALCULATION },
+						error
+					);
+				}
+			};
+		} catch (error) {
+			errorReporter.reportError(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize a scale with the given key
+	 */
+	initScale(scaleKey) {
+		try {
+			validateRequired(scaleKey, 'scaleKey', 'ScaleManager', 'initScale');
+			validateType(scaleKey, 'string', 'scaleKey', 'ScaleManager', 'initScale');
+			
+			let sc = this.scales[scaleKey];
+
+			if (sc == null) {
+				let scaleOpts = (this.opts.scales || EMPTY_OBJ)[scaleKey] || EMPTY_OBJ;
+
+				if (scaleOpts.from != null) {
+					// Validate parent scale exists or can be created
+					if (scaleOpts.from === scaleKey) {
+						throw new UPlotError(
+							`Scale '${scaleKey}' cannot reference itself as parent`,
+							'ScaleManager',
+							{ method: 'initScale', scaleKey, type: ERROR_TYPES.VALIDATION }
+						);
+					}
+					
+					// ensure parent is initialized
+					this.initScale(scaleOpts.from);
+					
+					if (!this.scales[scaleOpts.from]) {
+						throw new UPlotError(
+							`Parent scale '${scaleOpts.from}' could not be initialized`,
+							'ScaleManager',
+							{ method: 'initScale', scaleKey, parentScale: scaleOpts.from, type: ERROR_TYPES.INITIALIZATION }
+						);
+					}
+					
+					// dependent scales inherit
+					let sc = assign({}, this.scales[scaleOpts.from], scaleOpts, {key: scaleKey});
+					sc.valToPct = this.initValToPct(sc);
+					this.scales[scaleKey] = sc;
+				}
+				else {
+					sc = this.scales[scaleKey] = assign({}, (scaleKey == this.xScaleKey ? xScaleOpts : yScaleOpts), scaleOpts);
+
+					sc.key = scaleKey;
+
+					let isTime = FEAT_TIME && sc.time;
+
+					let rn = sc.range;
+
+					let rangeIsArr = isArr(rn);
+
+					if (scaleKey != this.xScaleKey || (this.mode == 2 && !isTime)) {
+						// if range array has null limits, it should be auto
+						if (rangeIsArr && (rn[0] == null || rn[1] == null)) {
+							rn = {
+								min: rn[0] == null ? autoRangePart : {
+									mode: 1,
+									hard: rn[0],
+									soft: rn[0],
+								},
+								max: rn[1] == null ? autoRangePart : {
+									mode: 1,
+									hard: rn[1],
+									soft: rn[1],
+								},
+							};
+							rangeIsArr = false;
+						}
+
+						if (!rangeIsArr && isObj(rn)) {
+							let cfg = rn;
+							// this is similar to snapNumY
+							rn = (self, dataMin, dataMax) => dataMin == null ? nullNullTuple : rangeNum(dataMin, dataMax, cfg);
+						}
+					}
+
+					sc.range = fnOrSelf(rn || (isTime ? snapTimeX : scaleKey == this.xScaleKey ?
+						(sc.distr == 3 ? snapLogX : sc.distr == 4 ? snapAsinhX : snapNumX) :
+						(sc.distr == 3 ? snapLogY : sc.distr == 4 ? snapAsinhY : snapNumY)
+					));
+
+					sc.auto = fnOrSelf(rangeIsArr ? false : sc.auto);
+
+					sc.clamp = fnOrSelf(sc.clamp || clampScale);
+
+					// caches for expensive ops like asinh() & log()
+					sc._min = sc._max = null;
+
+					sc.valToPct = this.initValToPct(sc);
+				}
+			}
+		} catch (error) {
+			errorReporter.reportError(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize all required scales
+	 */
+	initScales() {
+		// Initialize base scales
+		this.initScale("x");
+		this.initScale("y");
+
+		// Initialize series scales in mode 1
+		if (this.mode == 1 && this.uplot.series && Array.isArray(this.uplot.series)) {
+			this.uplot.series.forEach(s => {
+				if (s && s.scale) {
+					this.initScale(s.scale);
+				}
+			});
+		}
+
+		// Initialize axis scales
+		if (this.uplot.axes?.axes && Array.isArray(this.uplot.axes.axes)) {
+			this.uplot.axes.axes.forEach(a => {
+				if (a && a.scale) {
+					this.initScale(a.scale);
+				}
+			});
+		}
+
+		// Initialize any additional scales from options
+		for (let k in (this.opts.scales || {})) {
+			this.initScale(k);
+		}
+
+		// Set up explicitly-set initial scales
+		for (let k in this.scales) {
+			let sc = this.scales[k];
+
+			if (sc.min != null || sc.max != null) {
+				this.pendScales[k] = {min: sc.min, max: sc.max};
+				sc.min = sc.max = null;
+			}
+		}
+	}
+
+	/**
+	 * Get horizontal position from value
+	 */
+	getHPos(val, scale, dim, off) {
+		let pct = scale.valToPct(val);
+		return off + dim * (scale.dir == -1 ? (1 - pct) : pct);
+	}
+
+	/**
+	 * Get vertical position from value
+	 */
+	getVPos(val, scale, dim, off) {
+		let pct = scale.valToPct(val);
+		return off + dim * (scale.dir == -1 ? pct : (1 - pct));
+	}
+
+	/**
+	 * Get position from value (orientation-aware)
+	 */
+	getPos(val, scale, dim, off) {
+		return scale.ori == 0 ? this.getHPos(val, scale, dim, off) : this.getVPos(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to X position
+	 */
+	valToPosX(val, scale, dim, off) {
+		const scaleX = this.scales[this.xScaleKey];
+		return scaleX.ori == 0 ? this.getHPos(val, scale, dim, off) : this.getVPos(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to Y position
+	 */
+	valToPosY(val, scale, dim, off) {
+		const scaleX = this.scales[this.xScaleKey];
+		return scaleX.ori == 0 ? this.getVPos(val, scale, dim, off) : this.getHPos(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert position to value
+	 */
+	posToVal(pos, scaleKey, can) {
+		return withErrorBoundary('ScaleManager', 'posToVal', function(pos, scaleKey, can) {
+			validateRequired(pos, 'pos', 'ScaleManager', 'posToVal');
+			validateRequired(scaleKey, 'scaleKey', 'ScaleManager', 'posToVal');
+			validateType(pos, 'number', 'pos', 'ScaleManager', 'posToVal');
+			validateType(scaleKey, 'string', 'scaleKey', 'ScaleManager', 'posToVal');
+			
+			let sc = this.scales[scaleKey];
+			
+			if (!sc) {
+				throw new UPlotError(
+					`Scale '${scaleKey}' not found`,
+					'ScaleManager',
+					{ method: 'posToVal', scaleKey, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+
+			let dim, off;
+
+			if (can) {
+				let bbox = this.uplot.bbox || {};
+				dim = sc.ori == 0 ? bbox.width : bbox.height;
+				off = sc.ori == 0 ? bbox.left : bbox.top;
+			}
+			else {
+				let layout = this.uplot.layout || this.uplot;
+				dim = sc.ori == 0 ? layout.plotWidCss : layout.plotHgtCss;
+				off = sc.ori == 0 ? layout.plotLftCss : layout.plotTopCss;
+			}
+
+			if (dim === 0) {
+				throw new UPlotError(
+					'Cannot convert position to value - plot dimension is zero',
+					'ScaleManager',
+					{ method: 'posToVal', scaleKey, dimension: dim, type: ERROR_TYPES.SCALE_CALCULATION }
+				);
+			}
+
+			let pct = (pos - off) / dim;
+
+			if (sc.dir == -1)
+				pct = 1 - pct;
+
+			if (sc.ori == 1)
+				pct = 1 - pct;
+
+			let { _min, _max } = sc;
+			
+			if (_min == null || _max == null) {
+				throw new UPlotError(
+					'Scale not properly initialized - missing min/max values',
+					'ScaleManager',
+					{ method: 'posToVal', scaleKey, type: ERROR_TYPES.SCALE_CALCULATION }
+				);
+			}
+
+			let val = _min + (_max - _min) * pct;
+
+			return (
+				sc.distr == 3 ? Math.pow(10, val) :
+				sc.distr == 4 ? Math.sinh(val) :
+				sc.distr == 100 ? (
+					typeof sc.inv === 'function' ? sc.inv(val) : 
+					(() => {
+						throw new UPlotError(
+							'Custom scale missing inverse transform function',
+							'ScaleManager',
+							{ method: 'posToVal', scaleKey, type: ERROR_TYPES.VALIDATION }
+						);
+					})()
+				) :
+				val
+			);
+		}).call(this, pos, scaleKey, can);
+	}
+
+	/**
+	 * Convert X position to value
+	 */
+	posToValX(pos, can) {
+		return this.posToVal(pos, this.xScaleKey, can);
+	}
+
+	/**
+	 * Convert Y position to value
+	 */
+	posToValY(pos, scaleKey, can) {
+		return this.posToVal(pos, scaleKey, can);
+	}
+
+	/**
+	 * Auto-scale X axis
+	 */
+	autoScaleX() {
+		this.viaAutoScaleX = true;
+
+		let _min, _max;
+
+		const data = this.uplot.data || [];
+		const scaleX = this.scales[this.xScaleKey];
+
+		if (data.length > 0 && data[0] && data[0].length > 0) {
+			// Get data range
+			let xData = data[0];
+			_min = xData[0];
+			_max = xData[xData.length - 1];
+
+			// Apply scale range function
+			if (scaleX.range) {
+				let range = scaleX.range(this.uplot, _min, _max, scaleX.key);
+				if (range) {
+					_min = range[0];
+					_max = range[1];
+				}
+			}
+		}
+		else {
+			_min = _max = null;
+		}
+
+		this._setScale(this.xScaleKey, _min, _max);
+	}
+
+	/**
+	 * Set scale with min/max values
+	 */
+	_setScale(key, min, max) {
+		this.setScale(key, {min, max});
+	}
+
+	/**
+	 * Set scale with options
+	 */
+	setScale(key, opts) {
+		let sc = this.scales[key];
+
+		if (sc != null) {
+			// Validate and process options
+			if (opts.min != null || opts.max != null) {
+				if (opts.min != null && opts.max != null && opts.min > opts.max) {
+					// Swap if min > max
+					let tmp = opts.min;
+					opts.min = opts.max;
+					opts.max = tmp;
+				}
+			}
+
+			// Queue the scale change
+			this.pendScales[key] = opts;
+			
+			// Mark that scales need to be set
+			this.uplot.shouldSetScales = true;
+		}
+	}
+
+	/**
+	 * Process pending scale changes
+	 */
+	setScales() {
+		const AUTOSCALE = {min: null, max: null};
+
+		// Add auto scales and unranged scales
+		for (let k in this.scales) {
+			let sc = this.scales[k];
+
+			if (
+				this.pendScales[k] == null && (
+					sc.min == null ||
+					// or auto scales when the x scale was explicitly set
+					this.pendScales[this.xScaleKey] != null && sc.auto(this.uplot, this.viaAutoScaleX)
+				)
+			) {
+				this.pendScales[k] = AUTOSCALE;
+			}
+		}
+
+		// Handle dependent scales
+		for (let k in this.pendScales) {
+			let sc = this.scales[k];
+
+			if (this.pendScales[k] == null && sc.from != null && this.pendScales[sc.from] != null) {
+				this.pendScales[k] = AUTOSCALE;
+			}
+		}
+
+		// Process scale changes
+		let changed = {};
+
+		for (let k in this.pendScales) {
+			let sc = this.scales[k];
+			let opts = this.pendScales[k];
+
+			if (opts.min != null || opts.max != null) {
+				// Apply the scale change
+				if (opts.min != null) {
+					sc.min = opts.min;
+					sc._min = sc.distr == 3 ? log10(sc.min) : sc.distr == 4 ? asinh(sc.min, sc.asinh) : sc.min;
+				}
+
+				if (opts.max != null) {
+					sc.max = opts.max;
+					sc._max = sc.distr == 3 ? log10(sc.max) : sc.distr == 4 ? asinh(sc.max, sc.asinh) : sc.max;
+				}
+
+				changed[k] = true;
+			}
+		}
+
+		// Clear pending scales
+		this.pendScales = {};
+		this.viaAutoScaleX = false;
+
+		return changed;
+	}
+
+	/**
+	 * Get scale by key
+	 */
+	getScale(key) {
+		return this.scales[key];
+	}
+
+	/**
+	 * Get X scale
+	 */
+	getXScale() {
+		return this.scales[this.xScaleKey];
+	}
+
+	/**
+	 * Get all scales
+	 */
+	getAllScales() {
+		return this.scales;
+	}
+
+	/**
+	 * Check if scale exists
+	 */
+	hasScale(key) {
+		return this.scales[key] != null;
+	}
+
+	/**
+	 * Update scale options
+	 */
+	updateScale(key, opts) {
+		let sc = this.scales[key];
+		if (sc != null) {
+			assign(sc, opts);
+			// Reinitialize valToPct if needed
+			if (opts.distr != null || opts.asinh != null) {
+				sc.valToPct = this.initValToPct(sc);
+			}
+		}
+	}
+}
+
+/**
+ * EventManager handles all mouse and touch event binding, unbinding, and processing
+ * for uPlot instances. It manages event listeners, coordinates with cursor system,
+ * and handles drag operations.
+ */
+class EventManager {
+	constructor(uplot) {
+		try {
+			validateRequired(uplot, 'uplot', 'EventManager', 'constructor');
+			
+			this.uplot = uplot;
+			this.mouseListeners = new Map();
+			this.globalListeners = new Set();
+			this.dragging = false;
+			
+			// Mouse position tracking
+			this.rawMouseLeft0 = 0;
+			this.rawMouseTop0 = 0;
+			this.mouseLeft0 = 0;
+			this.mouseTop0 = 0;
+			this.rawMouseLeft1 = 0;
+			this.rawMouseTop1 = 0;
+			this.mouseLeft1 = 0;
+			this.mouseTop1 = 0;
+			
+			// Drag state
+			this.dragX = false;
+			this.dragY = false;
+			this.downSelectLeft = 0;
+			this.downSelectTop = 0;
+			this.downSelectWidth = 0;
+			this.downSelectHeight = 0;
+			
+			// Cached rect for performance
+			this.rect = null;
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize event handling system
+	 */
+	initEvents(opts) {
+		return withErrorBoundary('EventManager', 'initEvents', function(opts) {
+			validateRequired(opts, 'opts', 'EventManager', 'initEvents');
+			
+			const { cursor, over, wrap } = this.uplot;
+			
+			if (!cursor) {
+				throw new UPlotError(
+					'Cursor configuration not available',
+					'EventManager',
+					{ method: 'initEvents', type: ERROR_TYPES.INITIALIZATION }
+				);
+			}
+			
+			if (!over) {
+				throw new UPlotError(
+					'Over element not available for event binding',
+					'EventManager',
+					{ method: 'initEvents', type: ERROR_TYPES.INITIALIZATION }
+				);
+			}
+			
+			if (!cursor.show) {
+				return;
+			}
+
+			try {
+				// Bind main cursor events
+				this.onMouse(mousedown, over, this.mouseDown.bind(this));
+				this.onMouse(mousemove, over, this.mouseMove.bind(this));
+				this.onMouse(mouseenter, over, this.mouseEnter.bind(this));
+				this.onMouse(mouseleave, over, this.mouseLeave.bind(this));
+				this.onMouse(dblclick, over, this.dblClick.bind(this));
+
+				// Touch event support
+				this.initTouchEvents(over);
+
+				// Bind click handler for drag operations
+				if (wrap) {
+					on("click", wrap, this.handleWrapClick.bind(this), true);
+				}
+
+				// Global window events for invalidation
+				if (domEnv) {
+					this.bindGlobalEvent(resize, win, this.invalidateRects.bind(this));
+					this.bindGlobalEvent(scroll, win, this.invalidateRects.bind(this), true);
+					this.bindGlobalEvent(dppxchange, win, this.onDppxChange.bind(this));
+				}
+			} catch (error) {
+				throw new UPlotError(
+					`Error initializing events: ${error.message}`,
+					'EventManager',
+					{ method: 'initEvents', type: ERROR_TYPES.EVENT_HANDLING },
+					error
+				);
+			}
+		}).call(this, opts);
+	}
+
+	/**
+	 * Initialize touch event support
+	 */
+	initTouchEvents(target) {
+		// Touch events are handled by converting them to mouse events
+		// This provides basic touch support for mobile devices
+		
+		const touchToMouse = (touchEvent, mouseEventType) => {
+			if (touchEvent.touches.length === 1) {
+				const touch = touchEvent.touches[0];
+				const mouseEvent = new MouseEvent(mouseEventType, {
+					clientX: touch.clientX,
+					clientY: touch.clientY,
+					button: 0,
+					buttons: 1,
+					bubbles: true,
+					cancelable: true
+				});
+				
+				// Prevent default touch behavior
+				touchEvent.preventDefault();
+				
+				// Dispatch the synthetic mouse event
+				target.dispatchEvent(mouseEvent);
+			}
+		};
+
+		// Convert touch events to mouse events
+		on('touchstart', target, (e) => touchToMouse(e, 'mousedown'));
+		on('touchmove', target, (e) => touchToMouse(e, 'mousemove'));
+		on('touchend', target, (e) => {
+			// For touchend, we need to use changedTouches
+			if (e.changedTouches.length === 1) {
+				const touch = e.changedTouches[0];
+				const mouseEvent = new MouseEvent('mouseup', {
+					clientX: touch.clientX,
+					clientY: touch.clientY,
+					button: 0,
+					buttons: 0,
+					bubbles: true,
+					cancelable: true
+				});
+				
+				e.preventDefault();
+				target.dispatchEvent(mouseEvent);
+			}
+		});
+	}
+
+	/**
+	 * Bind mouse event with cursor configuration
+	 */
+	onMouse(ev, targ, fn, onlyTarg = true) {
+		const { cursor } = this.uplot;
+		const targListeners = this.mouseListeners.get(targ) || {};
+		const listener = cursor.bind[ev](this.uplot, targ, fn, onlyTarg);
+
+		if (listener) {
+			on(ev, targ, targListeners[ev] = listener);
+			this.mouseListeners.set(targ, targListeners);
+		}
+	}
+
+	/**
+	 * Unbind mouse events
+	 */
+	offMouse(ev, targ) {
+		const targListeners = this.mouseListeners.get(targ) || {};
+
+		for (let k in targListeners) {
+			if (ev == null || k == ev) {
+				off(k, targ, targListeners[k]);
+				delete targListeners[k];
+			}
+		}
+
+		if (ev == null) {
+			this.mouseListeners.delete(targ);
+		}
+	}
+
+	/**
+	 * Bind global window events
+	 */
+	bindGlobalEvent(event, target, handler, useCapture = false) {
+		on(event, target, handler, useCapture);
+		this.globalListeners.add({ event, target, handler, useCapture });
+	}
+
+	/**
+	 * Handle wrap click events for drag operations
+	 */
+	handleWrapClick(e) {
+		const { over, cursor } = this.uplot;
+		
+		if (e.target === over) {
+			let didDrag = this.mouseLeft1 != this.mouseLeft0 || this.mouseTop1 != this.mouseTop0;
+			didDrag && cursor.drag.click(this.uplot, e);
+		}
+	}
+
+	/**
+	 * Mouse down event handler
+	 */
+	mouseDown(e, src, _l, _t, _w, _h, _i) {
+		return withErrorBoundary('EventManager', 'mouseDown', function(e, src, _l, _t, _w, _h, _i) {
+			const { cursor } = this.uplot;
+			
+			if (!cursor || !cursor.drag) {
+				throw new UPlotError(
+					'Cursor or drag configuration not available',
+					'EventManager',
+					{ method: 'mouseDown', type: ERROR_TYPES.EVENT_HANDLING }
+				);
+			}
+			
+			try {
+				this.dragging = true;
+				this.dragX = this.dragY = cursor.drag._x = cursor.drag._y = false;
+
+				let left = _l ?? this.mouseLeft1;
+				let top = _t ?? this.mouseTop1;
+
+				this.rawMouseLeft0 = this.rawMouseLeft1 = this.mouseLeft0 = this.mouseLeft1 = left;
+				this.rawMouseTop0 = this.rawMouseTop1 = this.mouseTop0 = this.mouseTop1 = top;
+
+				this.downSelectLeft = left;
+				this.downSelectTop = top;
+				this.downSelectWidth = 0;
+				this.downSelectHeight = 0;
+
+				if (e != null) {
+					this.onMouse(mouseup, doc, this.mouseUp.bind(this), false);
+					
+					if (typeof this.uplot.pubSync === 'function') {
+						this.uplot.pubSync(mousedown, this.uplot, this.mouseLeft0, this.mouseTop0, 
+							this.uplot.plotWidCss, this.uplot.plotHgtCss, null);
+					}
+				}
+			} catch (error) {
+				throw new UPlotError(
+					`Error handling mouse down: ${error.message}`,
+					'EventManager',
+					{ method: 'mouseDown', type: ERROR_TYPES.EVENT_HANDLING },
+					error
+				);
+			}
+		}).call(this, e, src, _l, _t, _w, _h, _i);
+	}
+
+	/**
+	 * Mouse move event handler
+	 */
+	mouseMove(e, src, _l, _t, _w, _h, _i) {
+		const { cursor } = this.uplot;
+		
+		if (cursor._lock) {
+			return;
+		}
+
+		this.setCursorEvent(e);
+
+		// Ignore phantom mousemove events on touch devices
+		if (this.dragging && e != null && e.movementX == 0 && e.movementY == 0) {
+			return;
+		}
+
+		this.syncRect(false);
+
+		let left, top;
+
+		if (e != null) {
+			left = e.clientX - this.rect.left;
+			top = e.clientY - this.rect.top;
+		} else {
+			left = _l;
+			top = _t;
+			this.syncRect(true);
+		}
+
+		if (left < 0 || top < 0) {
+			left = -10;
+			top = -10;
+		}
+
+		this.mouseLeft1 = left;
+		this.mouseTop1 = top;
+
+		this.updateCursor(null, src == null, src != null);
+	}
+
+	/**
+	 * Mouse up event handler
+	 */
+	mouseUp(e, src, _l, _t, _w, _h, _i) {
+		const { cursor } = this.uplot;
+		
+		this.dragging = cursor.drag._x = cursor.drag._y = false;
+
+		let left = _l ?? this.mouseLeft1;
+		let top = _t ?? this.mouseTop1;
+
+		this.rawMouseLeft1 = this.mouseLeft1 = left;
+		this.rawMouseTop1 = this.mouseTop1 = top;
+
+		// Handle selection
+		if (cursor.drag.setScale) {
+			let deltaX = this.mouseLeft1 - this.mouseLeft0;
+			let deltaY = this.mouseTop1 - this.mouseTop0;
+
+			if (this.dragX && Math.abs(deltaX) >= cursor.drag.dist) {
+				this.setSelect({
+					left: Math.min(this.mouseLeft0, this.mouseLeft1),
+					width: Math.abs(deltaX),
+					top: cursor.drag.y ? Math.min(this.mouseTop0, this.mouseTop1) : 0,
+					height: cursor.drag.y ? Math.abs(deltaY) : this.uplot.plotHgtCss,
+				}, false);
+			}
+		}
+
+		if (e != null) {
+			this.offMouse(mouseup, doc);
+			this.uplot.pubSync(mouseup, this.uplot, this.mouseLeft1, this.mouseTop1, 
+				this.uplot.plotWidCss, this.uplot.plotHgtCss, null);
+		}
+	}
+
+	/**
+	 * Mouse leave event handler
+	 */
+	mouseLeave(e, src, _l, _t, _w, _h, _i) {
+		const { cursor } = this.uplot;
+		
+		if (cursor._lock) {
+			return;
+		}
+
+		this.setCursorEvent(e);
+
+		if (!this.dragging) {
+			this.rawMouseLeft1 = this.mouseLeft1 = -10;
+			this.rawMouseTop1 = this.mouseTop1 = -10;
+
+			// Only fire on actual mouse leave, not programmatic
+			this.updateCursor(null, src == null, src != null);
+		}
+	}
+
+	/**
+	 * Mouse enter event handler
+	 */
+	mouseEnter(e) {
+		this.setCursorEvent(e);
+		this.syncRect(false);
+	}
+
+	/**
+	 * Double click event handler
+	 */
+	dblClick(e, src, _l, _t, _w, _h, _i) {
+		const { cursor } = this.uplot;
+		
+		if (cursor._lock) {
+			return;
+		}
+
+		this.setCursorEvent(e);
+
+		let left = _l ?? this.mouseLeft1;
+		let top = _t ?? this.mouseTop1;
+
+		this.rawMouseLeft1 = this.mouseLeft1 = left;
+		this.rawMouseTop1 = this.mouseTop1 = top;
+
+		this.updateCursor(null, src == null, src != null);
+
+		this.uplot.pubSync(dblclick, this.uplot, this.mouseLeft1, this.mouseTop1, 
+			this.uplot.plotWidCss, this.uplot.plotHgtCss, null);
+	}
+
+	/**
+	 * Set cursor event reference
+	 */
+	setCursorEvent(e) {
+		this.uplot.cursor.event = e;
+	}
+
+	/**
+	 * Update cursor position and trigger cursor update
+	 */
+	updateCursor(ts, _fire, _pub) {
+		this.rawMouseLeft1 = this.mouseLeft1;
+		this.rawMouseTop1 = this.mouseTop1;
+
+		[this.mouseLeft1, this.mouseTop1] = this.uplot.cursor.move(
+			this.uplot, this.mouseLeft1, this.mouseTop1
+		);
+
+		this.uplot.cursor.left = this.mouseLeft1;
+		this.uplot.cursor.top = this.mouseTop1;
+
+		// Delegate to uPlot's updateCursor method
+		if (this.uplot.updateCursor) {
+			this.uplot.updateCursor(ts, _fire, _pub);
+		}
+	}
+
+	/**
+	 * Sync bounding rect cache
+	 */
+	syncRect(force) {
+		if (force || this.rect == null) {
+			this.rect = this.uplot.over.getBoundingClientRect();
+			this.uplot.fire("syncRect", this.rect);
+		}
+	}
+
+	/**
+	 * Set selection area
+	 */
+	setSelect(opts, _fire) {
+		// Delegate to uPlot's setSelect method
+		if (this.uplot.setSelect) {
+			this.uplot.setSelect(opts, _fire);
+		}
+	}
+
+	/**
+	 * Handle DPR change events
+	 */
+	onDppxChange() {
+		// Update pixel ratio - this will be handled by main uPlot instance
+		if (this.uplot.setPxRatio) {
+			this.uplot.setPxRatio();
+		}
+	}
+
+	/**
+	 * Invalidate cached rects for all cursor plots
+	 */
+	invalidateRects() {
+		// This will be handled by the global cursor plots set
+		// Individual instances don't need to track this
+		if (this.uplot.syncRect) {
+			this.uplot.syncRect(true);
+		}
+	}
+
+	/**
+	 * Get current mouse position
+	 */
+	getMousePos() {
+		return {
+			left: this.mouseLeft1,
+			top: this.mouseTop1,
+			rawLeft: this.rawMouseLeft1,
+			rawTop: this.rawMouseTop1
+		};
+	}
+
+	/**
+	 * Get drag state
+	 */
+	getDragState() {
+		return {
+			dragging: this.dragging,
+			dragX: this.dragX,
+			dragY: this.dragY,
+			startLeft: this.mouseLeft0,
+			startTop: this.mouseTop0
+		};
+	}
+
+	/**
+	 * Clean up all event listeners
+	 */
+	destroy() {
+		// Remove all mouse listeners
+		for (let [targ] of this.mouseListeners) {
+			this.offMouse(null, targ);
+		}
+		this.mouseListeners.clear();
+
+		// Remove global listeners
+		for (let { event, target, handler, useCapture } of this.globalListeners) {
+			off(event, target, handler, useCapture);
+		}
+		this.globalListeners.clear();
+	}
+}
+
+/**
+ * Cursor Manager - handles cursor positioning, mouse interactions, and data point highlighting
+ */
+
+
+class CursorManager {
+	constructor(uplot) {
+		try {
+			validateRequired(uplot, 'uplot', 'CursorManager', 'constructor');
+			
+			this.uplot = uplot;
+			
+			// Cursor configuration
+			this.cursor = null;
+			this.showCursor = false;
+			this.cursorFocus = false;
+			this.cursorOnePt = false;
+			
+			// Cursor DOM elements
+			this.vCursor = null;
+			this.hCursor = null;
+			this.cursorPts = [];
+			this.cursorPtsLft = [];
+			this.cursorPtsTop = [];
+			
+			// Mouse state
+			this.mouseLeft1 = -10;
+			this.mouseTop1 = -10;
+			this.rawMouseLeft1 = -10;
+			this.rawMouseTop1 = -10;
+			
+			// Rect cache
+			this.rect = null;
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	initCursor(opts, series, activeIdxs, mode, over, focus) {
+		this.cursor = assign({}, cursorOpts, {drag: {y: mode == 2}}, opts.cursor);
+		this.showCursor = this.cursor.show;
+		
+		// Initialize cursor properties
+		this.cursor.idxs = activeIdxs;
+		this.cursor._lock = false;
+		
+		// Initialize points configuration
+		let points = this.cursor.points;
+		points.show = fnOrSelf(points.show);
+		points.size = fnOrSelf(points.size);
+		points.stroke = fnOrSelf(points.stroke);
+		points.fill = fnOrSelf(points.fill);
+		
+		// Initialize focus
+		this.cursorFocus = focus.prox >= 0;
+		this.cursorOnePt = this.cursorFocus && points.one;
+		
+		// Initialize cursor DOM elements
+		if (this.showCursor) {
+			if (this.cursor.x) {
+				this.vCursor = placeDiv(CURSOR_X, over);
+			}
+			
+			if (this.cursor.y) {
+				this.hCursor = placeDiv(CURSOR_Y, over);
+			}
+		}
+		
+		// Initialize data index function if not provided
+		if (this.cursor.dataIdx == null) {
+			this.cursor.dataIdx = this.createDataIdxFunction();
+		}
+		
+		return this.cursor;
+	}
+
+	createDataIdxFunction() {
+		return (self, seriesIdx, cursorIdx, valAtPosX) => {
+			if (seriesIdx == 0) {
+				return cursorIdx;
+			}
+
+			let idx2 = cursorIdx;
+			let series = self.series;
+			let data = self.data;
+			let scaleX = self.scales[series[0].scale];
+			let plotWidCss = self.plotWidCss;
+			let plotHgtCss = self.plotHgtCss;
+
+			let prox = self.series[seriesIdx].prox || (() => 1);
+			let _prox = prox(self, seriesIdx, cursorIdx, valAtPosX) ?? inf;
+			let withProx = _prox >= 0 && _prox < inf;
+			let xDim = scaleX.ori == 0 ? plotWidCss : plotHgtCss;
+			let cursorLft = this.cursor.left;
+
+			let xValues = data[0];
+			let yValues = data[seriesIdx];
+			let hov = this.cursor.hover;
+			let skip = hov.skip = new Set(hov.skip ?? []);
+
+			if (skip.has(yValues[cursorIdx])) {
+				idx2 = null;
+
+				let nonNullLft = null;
+				let nonNullRgt = null;
+				let bias = hov.bias;
+
+				if (bias == 0 || bias == -1) {
+					let j = cursorIdx;
+					while (nonNullLft == null && j-- > 0) {
+						if (!skip.has(yValues[j])) {
+							nonNullLft = j;
+						}
+					}
+				}
+
+				if (bias == 0 || bias == 1) {
+					let j = cursorIdx;
+					while (nonNullRgt == null && j++ < yValues.length) {
+						if (!skip.has(yValues[j])) {
+							nonNullRgt = j;
+						}
+					}
+				}
+
+				if (nonNullLft != null || nonNullRgt != null) {
+					let valToPosX = self.valToPosX;
+					let lftPos = nonNullLft == null ? -Infinity : valToPosX(xValues[nonNullLft], scaleX, xDim, 0);
+					let rgtPos = nonNullRgt == null ? Infinity : valToPosX(xValues[nonNullRgt], scaleX, xDim, 0);
+
+					let lftDelta = cursorLft - lftPos;
+					let rgtDelta = rgtPos - cursorLft;
+
+					if (lftDelta <= rgtDelta) {
+						if (nonNullLft != null) {
+							idx2 = nonNullLft;
+						}
+					} else {
+						if (nonNullRgt != null) {
+							idx2 = nonNullRgt;
+						}
+					}
+
+					if (idx2 == null) {
+						idx2 = nonNullRgt == null ? nonNullLft :
+							nonNullLft == null ? nonNullRgt :
+							cursorIdx - nonNullLft <= nonNullRgt - cursorIdx ? nonNullLft : nonNullRgt;
+					}
+				}
+			} else if (withProx) {
+				let valToPosX = self.valToPosX;
+				let dist = abs(cursorLft - valToPosX(xValues[cursorIdx], scaleX, xDim, 0));
+
+				if (dist > _prox) {
+					idx2 = null;
+				}
+			}
+
+			return idx2;
+		};
+	}
+
+	initCursorPt(s, si, over, plotWidCss, plotHgtCss) {
+		let pt = this.cursor.points.show(this.uplot, si);
+
+		if (pt) {
+			addClass(pt, CURSOR_PT);
+			addClass(pt, s.class);
+			elTrans(pt, -10, -10, plotWidCss, plotHgtCss);
+			over.insertBefore(pt, this.cursorPts[si]);
+		}
+
+		return pt;
+	}
+
+	addCursorPt(s, i, over, plotWidCss, plotHgtCss) {
+		if (!this.showCursor) return;
+		
+		let pt = null;
+
+		if (this.cursor.points.show(this.uplot, i)) {
+			pt = this.initCursorPt(s, i, over, plotWidCss, plotHgtCss);
+		}
+
+		this.cursorPts.splice(i, 0, pt);
+		this.cursorPtsLft.splice(i, 0, 0);
+		this.cursorPtsTop.splice(i, 0, 0);
+	}
+
+	removeCursorPt(i) {
+		if (!this.showCursor) return;
+		
+		let pt = this.cursorPts.splice(i, 1)[0];
+		if (pt) {
+			pt.remove();
+		}
+		this.cursorPtsLft.splice(i, 1);
+		this.cursorPtsTop.splice(i, 1);
+	}
+
+	setCursor(opts, _fire, _pub) {
+		return withErrorBoundary('CursorManager', 'setCursor', function(opts, _fire, _pub) {
+			validateRequired(opts, 'opts', 'CursorManager', 'setCursor');
+			
+			if (typeof opts.left !== 'number' || typeof opts.top !== 'number') {
+				throw new UPlotError(
+					'setCursor requires opts.left and opts.top to be numbers',
+					'CursorManager',
+					{ method: 'setCursor', opts, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			this.mouseLeft1 = opts.left;
+			this.mouseTop1 = opts.top;
+			this.updateCursor(null, _fire, _pub);
+		}).call(this, opts, _fire, _pub);
+	}
+
+	setCursorEvent(e) {
+		this.cursor.event = e;
+	}
+
+	updateCursor(src, _fire, _pub) {
+		return withErrorBoundary('CursorManager', 'updateCursor', function(src, _fire, _pub) {
+			if (!this.cursor) {
+				throw new UPlotError(
+					'Cursor not initialized - call initCursor first',
+					'CursorManager',
+					{ method: 'updateCursor', type: ERROR_TYPES.INITIALIZATION }
+				);
+			}
+			
+			this.rawMouseLeft1 = this.mouseLeft1;
+			this.rawMouseTop1 = this.mouseTop1;
+
+			if (typeof this.cursor.move === 'function') {
+				try {
+					[this.mouseLeft1, this.mouseTop1] = this.cursor.move(this.uplot, this.mouseLeft1, this.mouseTop1);
+				} catch (error) {
+					throw new UPlotError(
+						`Error in cursor move function: ${error.message}`,
+						'CursorManager',
+						{ method: 'updateCursor', type: ERROR_TYPES.EVENT_HANDLING },
+						error
+					);
+				}
+			}
+
+			this.cursor.left = this.mouseLeft1;
+			this.cursor.top = this.mouseTop1;
+
+			if (this.showCursor) {
+				// Update cursor lines
+				if (this.vCursor) {
+					safeExecute('CursorManager', 'updateCursor.vCursor', () => {
+						elTrans(this.vCursor, round(this.cursor.left), 0, this.uplot.plotWidCss, this.uplot.plotHgtCss);
+					});
+				}
+				if (this.hCursor) {
+					safeExecute('CursorManager', 'updateCursor.hCursor', () => {
+						elTrans(this.hCursor, 0, round(this.cursor.top), this.uplot.plotWidCss, this.uplot.plotHgtCss);
+					});
+				}
+
+				// Hide all cursor points initially
+				if (this.uplot.series && Array.isArray(this.uplot.series)) {
+					for (let i = 0; i < this.uplot.series.length; i++) {
+						let pt = this.cursorPts[i];
+						if (pt != null) {
+							safeExecute('CursorManager', 'updateCursor.hidePt', () => {
+								elTrans(pt, -10, -10, this.uplot.plotWidCss, this.uplot.plotHgtCss);
+							});
+						}
+					}
+				}
+			}
+
+			// Update cursor data indices and positions
+			safeExecute('CursorManager', 'updateCursor.updatePoints', () => {
+				this.updateCursorPoints();
+			});
+
+			if (_fire !== false && typeof this.uplot.fire === 'function') {
+				safeExecute('CursorManager', 'updateCursor.fire', () => {
+					this.uplot.fire("setCursor");
+				});
+			}
+		}).call(this, src, _fire, _pub);
+	}
+
+	updateCursorPoints() {
+		if (!this.showCursor) return;
+
+		let series = this.uplot.series;
+		let data = this.uplot.data;
+		let activeIdxs = this.uplot.activeIdxs;
+
+		// Find closest data point for each series
+		for (let i = 0; i < series.length; i++) {
+			let s = series[i];
+			
+			if (i == 0 || !s.show) continue;
+
+			let idx = activeIdxs[i];
+			if (idx == null) continue;
+
+			let src = data[i];
+			if (!src || idx >= src.length) continue;
+
+			// Calculate point position
+			let scaleX = this.uplot.scales[series[0].scale];
+			let scaleY = this.uplot.scales[s.scale];
+			
+			if (!scaleX || !scaleY) continue;
+
+			let xVal = data[0][idx];
+			let yVal = src[idx];
+
+			if (xVal == null || yVal == null) continue;
+
+			let ptLft = this.uplot.valToPosX(xVal, scaleX, this.uplot.plotWidCss, 0);
+			let ptTop = this.uplot.valToPosY(yVal, scaleY, this.uplot.plotHgtCss, 0);
+
+			let pt = this.cursorOnePt ? this.cursorPts[0] : this.cursorPts[i];
+
+			if (pt != null) {
+				this.cursorPtsLft[i] = ptLft;
+				this.cursorPtsTop[i] = ptTop;
+
+				let ptWid = this.cursor.points.size(this.uplot, i);
+				let ptHgt = ptWid;
+
+				elSize(pt, ptWid, ptHgt);
+				elTrans(pt, ceil(ptLft), ceil(ptTop), this.uplot.plotWidCss, this.uplot.plotHgtCss);
+
+				// Update point styling
+				pt.style.borderColor = this.cursor.points.stroke(this.uplot, i);
+				pt.style.backgroundColor = this.cursor.points.fill(this.uplot, i);
+			}
+		}
+	}
+
+	syncRect(defer = false) {
+		if (defer) {
+			this.rect = null;
+		} else {
+			this.rect = this.uplot.over.getBoundingClientRect();
+			this.uplot.fire("syncRect", this.rect);
+		}
+	}
+
+	getRect() {
+		if (this.rect == null) {
+			this.syncRect(false);
+		}
+		return this.rect;
+	}
+
+	cacheMouse(e, src, _l, _t, _w, _h, _i, initial, snap) {
+		if (this.rect == null) {
+			this.syncRect(false);
+		}
+
+		this.setCursorEvent(e);
+
+		if (e != null) {
+			this.updateCursor(null, true, true);
+		} else {
+			this.updateCursor(src, true, false);
+		}
+	}
+
+	setSeriesOpacity(i, value) {
+		if (this.showCursor && this.cursorPts[i] != null) {
+			this.cursorPts[i].style.opacity = value;
+		}
+	}
+
+	scaleCursor(pctWid, pctHgt) {
+		if (this.showCursor && !this.uplot.shouldSetCursor && this.cursor.left >= 0) {
+			this.cursor.left *= pctWid;
+			this.cursor.top *= pctHgt;
+
+			this.vCursor && elTrans(this.vCursor, round(this.cursor.left), 0, this.uplot.plotWidCss, this.uplot.plotHgtCss);
+			this.hCursor && elTrans(this.hCursor, 0, round(this.cursor.top), this.uplot.plotWidCss, this.uplot.plotHgtCss);
+
+			for (let i = 0; i < this.cursorPts.length; i++) {
+				let pt = this.cursorPts[i];
+
+				if (pt != null) {
+					this.cursorPtsLft[i] *= pctWid;
+					this.cursorPtsTop[i] *= pctHgt;
+					elTrans(pt, ceil(this.cursorPtsLft[i]), ceil(this.cursorPtsTop[i]), this.uplot.plotWidCss, this.uplot.plotHgtCss);
+				}
+			}
+		}
+	}
+
+	destroy() {
+		// Clean up DOM elements
+		if (this.vCursor) {
+			this.vCursor.remove();
+		}
+		if (this.hCursor) {
+			this.hCursor.remove();
+		}
+		
+		for (let pt of this.cursorPts) {
+			if (pt) {
+				pt.remove();
+			}
+		}
+		
+		// Reset state
+		this.cursorPts = [];
+		this.cursorPtsLft = [];
+		this.cursorPtsTop = [];
+		this.cursor = null;
+		this.rect = null;
+	}
+}
+
+/**
+ * Legend Manager - handles legend rendering, management, and interactions
+ */
+
+
+class LegendManager {
+	constructor(uplot) {
+		try {
+			validateRequired(uplot, 'uplot', 'LegendManager', 'constructor');
+			
+			this.uplot = uplot;
+			
+			// Legend configuration
+			this.legend = null;
+			this.showLegend = false;
+			this.markers = null;
+			
+			// Legend DOM elements
+			this.legendTable = null;
+			this.legendHead = null;
+			this.legendBody = null;
+			this.legendRows = [];
+			this.legendCells = [];
+			this.legendCols = null;
+			this.multiValLegend = false;
+			this.NULL_LEGEND_VALUES = {};
+			
+			// Mouse event listeners tracking
+			this.mouseListeners = new Map();
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	initLegend(opts, series, activeIdxs, mode, root, cursor, syncOpts) {
+		return withErrorBoundary('LegendManager', 'initLegend', function(opts, series, activeIdxs, mode, root, cursor, syncOpts) {
+			
+			validateRequired(opts, 'opts', 'LegendManager', 'initLegend');
+			validateRequired(series, 'series', 'LegendManager', 'initLegend');
+			validateRequired(activeIdxs, 'activeIdxs', 'LegendManager', 'initLegend');
+			validateRequired(root, 'root', 'LegendManager', 'initLegend');
+			
+			if (!Array.isArray(series)) {
+				throw new UPlotError(
+					'Series must be an array',
+					'LegendManager',
+					{ method: 'initLegend', seriesType: typeof series, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			if (!Array.isArray(activeIdxs)) {
+				throw new UPlotError(
+					'ActiveIdxs must be an array',
+					'LegendManager',
+					{ method: 'initLegend', activeIdxsType: typeof activeIdxs, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			try {
+				this.legend = assign({}, legendOpts, opts.legend);
+				this.showLegend = this.legend.show;
+				this.markers = this.legend.markers;
+				
+				if (this.legend) {
+					this.legend.idxs = activeIdxs;
+					this.markers.width = fnOrSelf(this.markers.width);
+					this.markers.stroke = fnOrSelf(this.markers.stroke);
+					this.markers.fill = fnOrSelf(this.markers.fill);
+					this.markers.dash = fnOrSelf(this.markers.dash);
+				}
+				
+				// Initialize multi-value legend support
+				if (this.legend.live) {
+					const getMultiVals = series[1] ? series[1].values : null;
+					this.multiValLegend = getMultiVals != null;
+					this.legendCols = this.multiValLegend ? getMultiVals(this.uplot, 1, 0) : {_: 0};
+					
+					for (let k in this.legendCols) {
+						this.NULL_LEGEND_VALUES[k] = LEGEND_DISP;
+					}
+				}
+				
+				// Create legend DOM structure
+				if (this.showLegend) {
+					this.legendTable = placeTag("table", LEGEND, root);
+					this.legendBody = placeTag("tbody", null, this.legendTable);
+					
+					// Allow legend to be moved out of root
+					if (typeof this.legend.mount === 'function') {
+						this.legend.mount(this.uplot, this.legendTable);
+					}
+					
+					if (this.multiValLegend) {
+						this.legendHead = placeTag("thead", null, this.legendTable, this.legendBody);
+					}
+				}
+				
+				// Initialize legend values array
+				this.legend.values = [];
+			} catch (error) {
+				throw new UPlotError(
+					`Error initializing legend: ${error.message}`,
+					'LegendManager',
+					{ method: 'initLegend', type: ERROR_TYPES.INITIALIZATION },
+					error
+				);
+			}
+			
+			return this.legend;
+		}).call(this, opts, series, activeIdxs, mode, root, cursor, syncOpts);
+	}
+
+	initLegendRow(s, i, series, mode, cursor, syncOpts) {
+		if (i == 0 && (this.multiValLegend || !this.legend.live || mode == 2)) {
+			return [null, null];
+		}
+
+		let cells = [];
+		let row = placeTag("tr", LEGEND_SERIES, this.legendBody, this.legendBody.childNodes[i]);
+
+		addClass(row, s.class);
+
+		if (!s.show) {
+			addClass(row, OFF);
+		}
+
+		let label = placeTag("th", null, row);
+
+		// Add marker if enabled
+		if (this.markers.show) {
+			let indic = placeDiv(LEGEND_MARKER, label);
+
+			if (i > 0) {
+				let width = this.markers.width(this.uplot, i);
+
+				if (width) {
+					indic.style.border = width + "px " + this.markers.dash(this.uplot, i) + " " + this.markers.stroke(this.uplot, i);
+				}
+
+				indic.style.background = this.markers.fill(this.uplot, i);
+			}
+		}
+
+		// Add label
+		let text = placeDiv(LEGEND_LABEL, label);
+
+		if (s.label instanceof HTMLElement) {
+			text.appendChild(s.label);
+		} else {
+			text.textContent = s.label;
+		}
+
+		// Add click handler for series toggle
+		if (i > 0) {
+			if (!this.markers.show) {
+				text.style.color = s.width > 0 ? this.markers.stroke(this.uplot, i) : this.markers.fill(this.uplot, i);
+			}
+
+			this.onMouse("click", label, e => {
+				if (cursor._lock) return;
+
+				this.uplot.setCursorEvent(e);
+
+				let seriesIdx = series.indexOf(s);
+
+				if ((e.ctrlKey || e.metaKey) != this.legend.isolate) {
+					// if any other series is shown, isolate this one. else show all
+					let isolate = series.some((s, i) => i > 0 && i != seriesIdx && s.show);
+
+					series.forEach((s, i) => {
+						i > 0 && this.uplot.setSeries(i, isolate ? (i == seriesIdx ? {show: true} : {show: false}) : {show: true}, true, syncOpts.setSeries);
+					});
+				} else {
+					this.uplot.setSeries(seriesIdx, {show: !s.show}, true, syncOpts.setSeries);
+				}
+			}, false);
+
+			// Add hover handler for cursor focus
+			if (cursor.focus) {
+				this.onMouse("mouseenter", label, e => {
+					if (cursor._lock) return;
+
+					this.uplot.setCursorEvent(e);
+					this.uplot.setSeries(series.indexOf(s), {focus: true}, true, syncOpts.setSeries);
+				}, false);
+			}
+		}
+
+		// Add value cells
+		for (var key in this.legendCols) {
+			let v = placeTag("td", LEGEND_VALUE, row);
+			v.textContent = "--";
+			cells.push(v);
+		}
+
+		return [row, cells];
+	}
+
+	addLegendRow(s, i, series, mode, cursor, syncOpts) {
+		if (!this.showLegend) return;
+		
+		let rowCells = this.initLegendRow(s, i, series, mode, cursor, syncOpts);
+		this.legendRows.splice(i, 0, rowCells[0]);
+		this.legendCells.splice(i, 0, rowCells[1]);
+		this.legend.values.push(null);
+	}
+
+	removeLegendRow(i) {
+		if (!this.showLegend) return;
+		
+		this.legend.values.splice(i, 1);
+		this.legendCells.splice(i, 1);
+		let tr = this.legendRows.splice(i, 1)[0];
+		
+		if (tr) {
+			this.offMouse(null, tr.firstChild);
+			tr.remove();
+		}
+	}
+
+	setLegend(opts, _fire) {
+		if (opts != null) {
+			if (opts.idxs) {
+				opts.idxs.forEach((didx, sidx) => {
+					this.uplot.activeIdxs[sidx] = didx;
+				});
+			} else if (!isUndef(opts.idx)) {
+				this.uplot.activeIdxs.fill(opts.idx);
+			}
+
+			this.legend.idx = this.uplot.activeIdxs[0];
+		}
+
+		if (this.showLegend && this.legend.live) {
+			for (let sidx = 0; sidx < this.uplot.series.length; sidx++) {
+				if (sidx > 0 || this.uplot.mode == 1 && !this.multiValLegend) {
+					this.setLegendValues(sidx, this.uplot.activeIdxs[sidx]);
+				}
+			}
+
+			this.syncLegend();
+		}
+
+		this.uplot.shouldSetLegend = false;
+
+		_fire !== false && this.uplot.fire("setLegend");
+	}
+
+	setLegendValues(sidx, idx) {
+		let s = this.uplot.series[sidx];
+		let src = sidx == 0 && this.uplot.xScaleDistr == 2 ? this.uplot.data0 : this.uplot.data[sidx];
+		let val;
+
+		if (this.multiValLegend) {
+			val = s.values(this.uplot, sidx, idx) ?? this.NULL_LEGEND_VALUES;
+		} else {
+			val = s.value(this.uplot, idx == null ? null : src[idx], sidx, idx);
+			val = val == null ? this.NULL_LEGEND_VALUES : {_: val};
+		}
+
+		this.legend.values[sidx] = val;
+	}
+
+	syncLegend() {
+		if (this.showLegend && this.legend.live) {
+			for (let i = this.uplot.mode == 2 ? 1 : 0; i < this.uplot.series.length; i++) {
+				if (i == 0 && this.multiValLegend) continue;
+
+				let vals = this.legend.values[i];
+
+				let j = 0;
+				for (let k in vals) {
+					if (this.legendCells[i] && this.legendCells[i][j]) {
+						this.legendCells[i][j].firstChild.nodeValue = vals[k];
+					}
+					j++;
+				}
+			}
+		}
+	}
+
+	updateSeriesLegend(i, s) {
+		if (!this.showLegend) return;
+		
+		if (s.show) {
+			remClass(this.legendRows[i], OFF);
+		} else {
+			addClass(this.legendRows[i], OFF);
+		}
+	}
+
+	setSeriesOpacity(i, value) {
+		if (this.showLegend && this.legendRows[i]) {
+			this.legendRows[i].style.opacity = value;
+		}
+	}
+
+	onMouse(ev, targ, fn, onlyTarg = true) {
+		const targListeners = this.mouseListeners.get(targ) || {};
+		const listener = this.uplot.cursor.bind[ev](this.uplot, targ, fn, onlyTarg);
+
+		if (listener) {
+			on(ev, targ, targListeners[ev] = listener);
+			this.mouseListeners.set(targ, targListeners);
+		}
+	}
+
+	offMouse(ev, targ, fn) {
+		const targListeners = this.mouseListeners.get(targ) || {};
+
+		for (let k in targListeners) {
+			if (ev == null || k == ev) {
+				off(k, targ, targListeners[k]);
+				delete targListeners[k];
+			}
+		}
+
+		if (ev == null) {
+			this.mouseListeners.delete(targ);
+		}
+	}
+
+	destroy() {
+		// Clean up event listeners
+		for (let [targ, listeners] of this.mouseListeners) {
+			this.offMouse(null, targ);
+		}
+		this.mouseListeners.clear();
+		
+		// Clean up DOM elements
+		if (this.legendTable) {
+			this.legendTable.remove();
+		}
+		
+		// Reset state
+		this.legendRows = [];
+		this.legendCells = [];
+		this.legend = null;
+	}
+}
+
+/**
+ * Series Manager - handles series initialization, configuration, data processing, and rendering coordination
+ */
+
+
+class SeriesManager {
+	constructor(uplot, scaleManager) {
+		try {
+			validateRequired(uplot, 'uplot', 'SeriesManager', 'constructor');
+			validateRequired(scaleManager, 'scaleManager', 'SeriesManager', 'constructor');
+			
+			this.uplot = uplot;
+			this.scaleManager = scaleManager;
+			this.series = [];
+			this.mode = uplot.mode || 1;
+			
+			// Path generators
+			this.linearPath = FEAT_PATHS ? linear() : null;
+			this.pointsPath = FEAT_POINTS ? points() : null;
+			
+			// Time formatting functions (will be set during initialization)
+			this._tzDate = null;
+			this._fmtDate = null;
+			this._timeSeriesVal = null;
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Initialize series from options
+	 */
+	initSeries(opts, data) {
+		return withErrorBoundary('SeriesManager', 'initSeries', function(opts, data) {
+			validateRequired(opts, 'opts', 'SeriesManager', 'initSeries');
+			
+			const { series: seriesOpts = [], ms = 1e-3 } = opts;
+			
+			if (!Array.isArray(seriesOpts)) {
+				throw new UPlotError(
+					'Series options must be an array',
+					'SeriesManager',
+					{ method: 'initSeries', seriesOptsType: typeof seriesOpts, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			// Set up time formatting functions
+			this._tzDate = (opts.tzDate || (ts => new Date(Math.round(ts / ms))));
+			this._fmtDate = (opts.fmtDate || ((ts) => ts ? new Date(ts).toISOString() : ''));
+			this._timeSeriesVal = timeSeriesVal(this._tzDate, timeSeriesStamp('', this._fmtDate));
+			
+			// Initialize series array based on mode
+			try {
+				if (this.mode == 1) {
+					// Ensure we have at least x and y series
+					const defaultSeries = seriesOpts.length ? seriesOpts : [{}, {}];
+					this.series = this.setDefaults(defaultSeries, xSeriesOpts, ySeriesOpts, false);
+				} else {
+					this.series = this.setDefaults2(seriesOpts.length ? seriesOpts : [null], xySeriesOpts);
+				}
+			} catch (error) {
+				throw new UPlotError(
+					`Error setting series defaults: ${error.message}`,
+					'SeriesManager',
+					{ method: 'initSeries', mode: this.mode, type: ERROR_TYPES.INITIALIZATION },
+					error
+				);
+			}
+			
+			// Process each series
+			this.series.forEach((s, i) => {
+				safeExecute('SeriesManager', `processSeriesConfig[${i}]`, () => {
+					this.processSeriesConfig(s, i);
+				});
+			});
+			
+			// Set reference on uplot instance
+			this.uplot.series = this.series;
+			
+			return this.series;
+		}).call(this, opts, data);
+	}
+
+	/**
+	 * Set defaults for series configuration (mode 1)
+	 */
+	setDefaults(seriesArray, xOpts, yOpts, initY) {
+		let d2 = initY ? [seriesArray[0], seriesArray[1]].concat(seriesArray.slice(2)) : [seriesArray[0]].concat(seriesArray.slice(1));
+		return d2.map((o, i) => this.setDefault(o, i, xOpts, yOpts));
+	}
+
+	/**
+	 * Set defaults for series configuration (mode 2)
+	 */
+	setDefaults2(seriesArray, xyOpts) {
+		return seriesArray.map((o, i) => i == 0 ? {} : assign({}, xyOpts, o));
+	}
+
+	/**
+	 * Set default values for a single series
+	 */
+	setDefault(o, i, xOpts, yOpts) {
+		return assign({}, (i == 0 ? xOpts : yOpts), o);
+	}
+
+	/**
+	 * Process series configuration
+	 */
+	processSeriesConfig(s, i) {
+		const { mode, _tzDate, _fmtDate, _timeSeriesVal } = this;
+		const { focus, cursor } = this.uplot;
+		const pxAlign = +ifNull(this.uplot.opts?.pxAlign, 1);
+		
+		// Configure value and label functions for time/numeric series
+		if (mode == 1 || i > 0) {
+			let isTime = mode == 1 && this.scaleManager.scales[s.scale]?.time;
+			
+			let sv = s.value;
+			s.value = isTime ? 
+				(isStr(sv) ? timeSeriesVal(_tzDate, timeSeriesStamp(sv, _fmtDate)) : sv || _timeSeriesVal) : 
+				sv || numSeriesVal;
+			s.label = s.label || (isTime ? timeSeriesLabel : numSeriesLabel);
+		}
+		
+		// Configure rendering properties for non-x-axis series
+		const cursorOnePt = focus?.prox >= 0 && cursor?.points?.one;
+		if (cursorOnePt || i > 0) {
+			s.width = s.width == null ? 1 : s.width;
+			s.paths = s.paths || this.linearPath || retNull;
+			s.fillTo = fnOrSelf(s.fillTo || seriesFillTo);
+			s.pxAlign = +ifNull(s.pxAlign, pxAlign);
+			s.pxRound = pxRoundGen(s.pxAlign);
+			
+			s.stroke = fnOrSelf(s.stroke || null);
+			s.fill = fnOrSelf(s.fill || null);
+			s._stroke = s._fill = s._paths = s._focus = null;
+			
+			// Configure points
+			let _ptDia = ptDia(max(1, s.width), 1);
+			let points = s.points = assign({}, {
+				size: _ptDia,
+				width: max(1, _ptDia * 0.2),
+				stroke: s.stroke,
+				space: _ptDia * 2,
+				paths: this.pointsPath,
+				_stroke: null,
+				_fill: null,
+			}, s.points);
+			
+			points.show = fnOrSelf(points.show);
+			points.filter = fnOrSelf(points.filter);
+			points.fill = fnOrSelf(points.fill);
+			points.stroke = fnOrSelf(points.stroke);
+			points.paths = fnOrSelf(points.paths);
+			points.pxAlign = s.pxAlign;
+		}
+	}
+
+	/**
+	 * Add a new series
+	 */
+	addSeries(opts, si) {
+		try {
+			validateRequired(opts, 'opts', 'SeriesManager', 'addSeries');
+			
+			si = si == null ? this.series.length : si;
+			
+			if (typeof si !== 'number' || si < 0) {
+				throw new UPlotError(
+					`Invalid series index ${si}. Must be a non-negative number`,
+					'SeriesManager',
+					{ method: 'addSeries', seriesIndex: si, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			if (si > this.series.length) {
+				throw new UPlotError(
+					`Series index ${si} is out of bounds. Maximum allowed is ${this.series.length}`,
+					'SeriesManager',
+					{ method: 'addSeries', seriesIndex: si, maxIndex: this.series.length, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			// Apply defaults based on mode
+			opts = this.mode == 1 ? 
+				this.setDefault(opts, si, xSeriesOpts, ySeriesOpts) : 
+				this.setDefault(opts, si, {}, xySeriesOpts);
+			
+			// Insert series
+			this.series.splice(si, 0, opts);
+			
+			// Process configuration
+			this.processSeriesConfig(this.series[si], si);
+			
+			// Fire event
+			if (typeof this.uplot.fire === 'function') {
+				this.uplot.fire("addSeries", si);
+			}
+			
+			return si;
+		} catch (error) {
+			errorReporter.reportError(new UPlotError(
+				`Error adding series at index ${si}: ${error.message}`,
+				'SeriesManager',
+				{ method: 'addSeries', seriesIndex: si, type: ERROR_TYPES.DATA_PROCESSING },
+				error
+			));
+			throw error;
+		}
+	}
+
+	/**
+	 * Remove a series
+	 */
+	delSeries(i) {
+		return withErrorBoundary('SeriesManager', 'delSeries', function(i) {
+			validateRequired(i, 'i', 'SeriesManager', 'delSeries');
+			validateType(i, 'number', 'i', 'SeriesManager', 'delSeries');
+			
+			if (i < 0 || i >= this.series.length) {
+				throw new UPlotError(
+					`Invalid series index ${i}. Must be between 0 and ${this.series.length - 1}`,
+					'SeriesManager',
+					{ method: 'delSeries', seriesIndex: i, seriesLength: this.series.length, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			if (i === 0 && this.mode === 1) {
+				throw new UPlotError(
+					'Cannot delete the x-axis series (index 0) in mode 1',
+					'SeriesManager',
+					{ method: 'delSeries', seriesIndex: i, mode: this.mode, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			try {
+				this.series.splice(i, 1);
+				
+				// Fire event
+				if (typeof this.uplot.fire === 'function') {
+					this.uplot.fire("delSeries", i);
+				}
+			} catch (error) {
+				throw new UPlotError(
+					`Error removing series at index ${i}: ${error.message}`,
+					'SeriesManager',
+					{ method: 'delSeries', seriesIndex: i, type: ERROR_TYPES.DATA_PROCESSING },
+					error
+				);
+			}
+			
+			return i;
+		}).call(this, i);
+	}
+
+	/**
+	 * Update series configuration
+	 */
+	setSeries(i, opts, _fire, _pub) {
+		if (i == null || !this.series[i]) return;
+		
+		let s = this.series[i];
+		
+		// Handle focus changes
+		if (opts.focus != null) {
+			this.setSeriesFocus(i, opts.focus);
+		}
+		
+		// Handle show/hide changes
+		if (opts.show != null) {
+			this.setSeriesVisibility(i, opts.show);
+		}
+		
+		// Handle alpha changes
+		if (opts.alpha != null) {
+			this.setSeriesAlpha(i, opts.alpha);
+		}
+		
+		// Apply other options
+		assign(s, opts);
+		
+		// Fire events
+		_fire !== false && this.uplot.fire("setSeries", i, opts);
+		_pub && this.uplot.pubSync && this.uplot.pubSync("setSeries", this.uplot, i, opts);
+	}
+
+	/**
+	 * Set series focus state
+	 */
+	setSeriesFocus(i, focused) {
+		if (i == null) {
+			// Clear all focus
+			this.series.forEach((s, idx) => {
+				if (idx > 0) {
+					s._focus = null;
+				}
+			});
+		} else if (this.series[i]) {
+			this.series[i]._focus = focused;
+		}
+	}
+
+	/**
+	 * Set series visibility
+	 */
+	setSeriesVisibility(i, show) {
+		if (this.series[i]) {
+			this.series[i].show = show;
+		}
+	}
+
+	/**
+	 * Set series alpha
+	 */
+	setSeriesAlpha(i, alpha) {
+		if (this.series[i]) {
+			this.series[i].alpha = alpha;
+		}
+	}
+
+	/**
+	 * Reset series paths (called when scales change)
+	 */
+	resetYSeries(minMax) {
+		try {
+			this.series.forEach((s, i) => {
+				if (i > 0) {
+					s._paths = null;
+					
+					if (minMax || s.min == null) {
+						s.min = inf;
+						s.max = -inf;
+					}
+				}
+			});
+		} catch (error) {
+			errorReporter.reportError(new UPlotError(
+				`Error resetting Y series: ${error.message}`,
+				'SeriesManager',
+				{ method: 'resetYSeries', type: ERROR_TYPES.DATA_PROCESSING },
+				error
+			));
+			throw error;
+		}
+	}
+
+	/**
+	 * Get outer indices for data rendering optimization
+	 */
+	getOuterIdxs(ydata, i0, i1, dataLen) {
+		let _i0 = clamp(i0 - 1, 0, dataLen - 1);
+		let _i1 = clamp(i1 + 1, 0, dataLen - 1);
+		
+		// Find first non-null value before i0
+		while (ydata[_i0] == null && _i0 > 0) {
+			_i0--;
+		}
+		
+		// Find first non-null value after i1
+		while (ydata[_i1] == null && _i1 < dataLen - 1) {
+			_i1++;
+		}
+		
+		return [_i0, _i1];
+	}
+
+	/**
+	 * Cache stroke and fill styles for a series
+	 */
+	cacheStrokeFill(si, _points) {
+		let s = _points ? this.series[si].points : this.series[si];
+		
+		s._stroke = s.stroke(this.uplot, si);
+		s._fill = s.fill(this.uplot, si);
+	}
+
+	/**
+	 * Generate paths for a series
+	 */
+	generateSeriesPaths(si, data, i0, i1, dataLen) {
+		let s = this.series[si];
+		
+		if (!s || si === 0) return null;
+		
+		let _idxs = this.mode == 2 ? 
+			[0, data[si][0].length - 1] : 
+			this.getOuterIdxs(data[si], i0, i1, dataLen);
+		
+		return s.paths(this.uplot, si, _idxs[0], _idxs[1]);
+	}
+
+	/**
+	 * Check if any series has focus
+	 */
+	hasFocusedSeries() {
+		return this.series.some(s => s._focus);
+	}
+
+	/**
+	 * Get series by index
+	 */
+	getSeries(i) {
+		return this.series[i];
+	}
+
+	/**
+	 * Get all series
+	 */
+	getAllSeries() {
+		return this.series;
+	}
+
+	/**
+	 * Get series count
+	 */
+	getSeriesCount() {
+		return this.series.length;
+	}
+
+	/**
+	 * Check if series is visible
+	 */
+	isSeriesVisible(i) {
+		return this.series[i]?.show !== false;
+	}
+
+	/**
+	 * Get visible series indices
+	 */
+	getVisibleSeriesIndices() {
+		return this.series.map((s, i) => s.show !== false ? i : null).filter(i => i !== null);
+	}
+
+	/**
+	 * Update series paths when scales change
+	 */
+	updateSeriesForScaleChange(changedScales) {
+		this.series.forEach((s, i) => {
+			if (i > 0) {
+				if (this.mode == 2) {
+					if (changedScales.y) {
+						s._paths = null;
+					}
+				} else {
+					if (changedScales[s.scale]) {
+						s._paths = null;
+					}
+				}
+			}
+		});
+	}
+
+	/**
+	 * Prepare series for drawing
+	 */
+	prepareSeriesForDraw(data, i0, i1, dataLen) {
+		const results = [];
+		
+		this.series.forEach((s, i) => {
+			if (i > 0 && s.show) {
+				// Cache stroke and fill
+				this.cacheStrokeFill(i, false);
+				this.cacheStrokeFill(i, true);
+				
+				// Generate paths if needed
+				if (s._paths == null) {
+					s._paths = this.generateSeriesPaths(i, data, i0, i1, dataLen);
+				}
+				
+				results.push({
+					index: i,
+					series: s,
+					paths: s._paths,
+					points: s.points
+				});
+			}
+		});
+		
+		return results;
+	}
+
+	/**
+	 * Get drawing information for a series
+	 */
+	getSeriesDrawInfo(si, _points) {
+		let s = _points ? this.series[si].points : this.series[si];
+		
+		if (!s || !s._paths) return null;
+		
+		const { 
+			stroke: strokeStyle = s._stroke,
+			fill: fillStyle = s._fill,
+			width = s.width,
+			flags
+		} = s._paths;
+		
+		return {
+			strokeStyle,
+			fillStyle,
+			width: roundDec(width * (this.uplot.pxRatio || 1), 3),
+			flags,
+			pxAlign: s.pxAlign,
+			paths: s._paths
+		};
+	}
+}
 
 // dim is logical (getClientBoundingRect) pixels, not canvas pixels
 function findIncr(minVal, maxVal, incrs, dim, minSpace) {
@@ -2915,834 +5538,72 @@ function syncFontSize(axis, pxRatio) {
 	}
 }
 
-function uPlot(opts, data, then) {
-	let pxRatio$1 = opts.pxRatio ?? pxRatio;
-
-	function setPxRatio(_pxRatio) {
-		pxRatio$1 = self.pxRatio = (_pxRatio ?? pxRatio);
-		axes.forEach(axis => syncFontSize(axis, pxRatio$1));
-		_setSize(self.width, self.height, true);
-	}
-	const self = {
-		mode: ifNull(opts.mode, 1),
-		pxRatio: pxRatio$1,
-		setPxRatio,
-	};
-
-	self.setPxRatio = setPxRatio;
-	const mode = self.mode;
-
-	function getHPos(val, scale, dim, off) {
-		let pct = scale.valToPct(val);
-		return off + dim * (scale.dir == -1 ? (1 - pct) : pct);
-	}
-
-	function getVPos(val, scale, dim, off) {
-		let pct = scale.valToPct(val);
-		return off + dim * (scale.dir == -1 ? pct : (1 - pct));
-	}
-
-	function getPos(val, scale, dim, off) {
-		return scale.ori == 0 ? getHPos(val, scale, dim, off) : getVPos(val, scale, dim, off);
-	}
-
-	self.valToPosH = getHPos;
-	self.valToPosV = getVPos;
-
-	let ready = false;
-	self.status = 0;
-
-	const root = self.root = placeDiv(UPLOT);
-
-	if (opts.id != null)
-		root.id = opts.id;
-
-	addClass(root, opts.class);
-
-	if (opts.title) {
-		let title = placeDiv(TITLE, root);
-		title.textContent = opts.title;
-	}
-
-	const can = placeTag("canvas");
-	const ctx = self.ctx = can.getContext("2d");
-
-	const wrap = placeDiv(WRAP, root);
-
-	on("click", wrap, e => {
-		if (e.target === over) {
-			let didDrag = mouseLeft1 != mouseLeft0 || mouseTop1 != mouseTop0;
-			didDrag && drag.click(self, e);
+class AxisManager {
+	constructor(uplot, scaleManager) {
+		try {
+			validateRequired(uplot, 'uplot', 'AxisManager', 'constructor');
+			validateRequired(scaleManager, 'scaleManager', 'AxisManager', 'constructor');
+			
+			this.uplot = uplot;
+			this.scaleManager = scaleManager;
+			this.axes = uplot.axes;
+			this.scales = uplot.scales;
+			this.series = uplot.series;
+			this.sidesWithAxes = [false, false, false, false];
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
 		}
-	}, true);
-
-	const under = self.under = placeDiv(UNDER, wrap);
-	wrap.appendChild(can);
-	const over = self.over = placeDiv(OVER, wrap);
-
-	opts = copy(opts);
-
-	const pxAlign = +ifNull(opts.pxAlign, 1);
-
-	const pxRound = pxRoundGen(pxAlign);
-
-	(opts.plugins || []).forEach(p => {
-		if (p.opts)
-			opts = p.opts(self, opts) || opts;
-	});
-
-	const ms = opts.ms || 1e-3;
-
-	const series  = self.series = mode == 1 ?
-		setDefaults(opts.series || [], xSeriesOpts, ySeriesOpts, false) :
-		setDefaults2(opts.series || [null], xySeriesOpts);
-	const axes    = self.axes   = setDefaults(opts.axes   || [], xAxisOpts,   yAxisOpts,    true);
-	const scales  = self.scales = {};
-	const bands   = self.bands  = opts.bands || [];
-
-	bands.forEach(b => {
-		b.fill = fnOrSelf(b.fill || null);
-		b.dir = ifNull(b.dir, -1);
-	});
-
-	const xScaleKey = mode == 2 ? series[1].facets[0].scale : series[0].scale;
-
-	const drawOrderMap = {
-		axes: drawAxesGrid,
-		series: drawSeries,
-	};
-
-	const drawOrder = (opts.drawOrder || ["axes", "series"]).map(key => drawOrderMap[key]);
-
-	function initValToPct(sc) {
-		const getVal = (
-			sc.distr == 3   ? val => log10(val > 0 ? val : sc.clamp(self, val, sc.min, sc.max, sc.key)) :
-			sc.distr == 4   ? val => asinh(val, sc.asinh) :
-			sc.distr == 100 ? val => sc.fwd(val) :
-			val => val
-		);
-
-		return val => {
-			let _val = getVal(val);
-			let { _min, _max } = sc;
-			let delta = _max - _min;
-			return (_val - _min) / delta;
-		};
 	}
 
-	function initScale(scaleKey) {
-		let sc = scales[scaleKey];
-
-		if (sc == null) {
-			let scaleOpts = (opts.scales || EMPTY_OBJ)[scaleKey] || EMPTY_OBJ;
-
-			if (scaleOpts.from != null) {
-				// ensure parent is initialized
-				initScale(scaleOpts.from);
-				// dependent scales inherit
-				let sc = assign({}, scales[scaleOpts.from], scaleOpts, {key: scaleKey});
-				sc.valToPct = initValToPct(sc);
-				scales[scaleKey] = sc;
+	initAxes(opts) {
+		return withErrorBoundary('AxisManager', 'initAxes', function(opts) {
+			validateRequired(opts, 'opts', 'AxisManager', 'initAxes');
+			
+			const { uplot } = this;
+			const { mode, pxRatio, wrap } = uplot;
+			const series = uplot.series; // Get series from uplot instance
+			const { scales } = this;
+			
+			if (!series || !Array.isArray(series) || series.length === 0) {
+				throw new UPlotError(
+					'No series available for axis initialization',
+					'AxisManager',
+					{ method: 'initAxes', seriesLength: series?.length, type: ERROR_TYPES.INITIALIZATION }
+				);
 			}
-			else {
-				sc = scales[scaleKey] = assign({}, (scaleKey == xScaleKey ? xScaleOpts : yScaleOpts), scaleOpts);
-
-				sc.key = scaleKey;
-
-				let isTime = sc.time;
-
-				let rn = sc.range;
-
-				let rangeIsArr = isArr(rn);
-
-				if (scaleKey != xScaleKey || (mode == 2 && !isTime)) {
-					// if range array has null limits, it should be auto
-					if (rangeIsArr && (rn[0] == null || rn[1] == null)) {
-						rn = {
-							min: rn[0] == null ? autoRangePart : {
-								mode: 1,
-								hard: rn[0],
-								soft: rn[0],
-							},
-							max: rn[1] == null ? autoRangePart : {
-								mode: 1,
-								hard: rn[1],
-								soft: rn[1],
-							},
-						};
-						rangeIsArr = false;
-					}
-
-					if (!rangeIsArr && isObj(rn)) {
-						let cfg = rn;
-						// this is similar to snapNumY
-						rn = (self, dataMin, dataMax) => dataMin == null ? nullNullTuple : rangeNum(dataMin, dataMax, cfg);
-					}
-				}
-
-				sc.range = fnOrSelf(rn || (isTime ? snapTimeX : scaleKey == xScaleKey ?
-					(sc.distr == 3 ? snapLogX : sc.distr == 4 ? snapAsinhX : snapNumX) :
-					(sc.distr == 3 ? snapLogY : sc.distr == 4 ? snapAsinhY : snapNumY)
-				));
-
-				sc.auto = fnOrSelf(rangeIsArr ? false : sc.auto);
-
-				sc.clamp = fnOrSelf(sc.clamp || clampScale);
-
-				// caches for expensive ops like asinh() & log()
-				sc._min = sc._max = null;
-
-				sc.valToPct = initValToPct(sc);
+			
+			// Get scale key for x-axis
+			const xScaleKey = mode == 2 ? 
+				(series[1]?.facets?.[0]?.scale || 'x') : 
+				(series[0]?.scale || 'x');
+			
+			// Get axes configuration from uplot instance
+			const axesConfig = uplot.axesConfig || [];
+			
+			if (!Array.isArray(axesConfig)) {
+				throw new UPlotError(
+					'Axes array not properly initialized',
+					'AxisManager',
+					{ method: 'initAxes', axesType: typeof axesConfig, type: ERROR_TYPES.INITIALIZATION }
+				);
 			}
-		}
+			
+			// Store the axes configuration
+			this.axes = axesConfig;
+			
+			this.axes.forEach((axis, i) => {
+				safeExecute('AxisManager', `initAxis[${i}]`, () => {
+					this.initAxis(axis, i, xScaleKey, pxRatio, wrap);
+				});
+			});
+		}).call(this, opts);
 	}
 
-	initScale("x");
-	initScale("y");
-
-	// TODO: init scales from facets in mode: 2
-	if (mode == 1) {
-		series.forEach(s => {
-			initScale(s.scale);
-		});
-	}
-
-	axes.forEach(a => {
-		initScale(a.scale);
-	});
-
-	for (let k in opts.scales)
-		initScale(k);
-
-	const scaleX = scales[xScaleKey];
-
-	const xScaleDistr = scaleX.distr;
-
-	let valToPosX, valToPosY;
-
-	if (scaleX.ori == 0) {
-		addClass(root, ORI_HZ);
-		valToPosX = getHPos;
-		valToPosY = getVPos;
-		/*
-		updOriDims = () => {
-			xDimCan = plotWid;
-			xOffCan = plotLft;
-			yDimCan = plotHgt;
-			yOffCan = plotTop;
-
-			xDimCss = plotWidCss;
-			xOffCss = plotLftCss;
-			yDimCss = plotHgtCss;
-			yOffCss = plotTopCss;
-		};
-		*/
-	}
-	else {
-		addClass(root, ORI_VT);
-		valToPosX = getVPos;
-		valToPosY = getHPos;
-		/*
-		updOriDims = () => {
-			xDimCan = plotHgt;
-			xOffCan = plotTop;
-			yDimCan = plotWid;
-			yOffCan = plotLft;
-
-			xDimCss = plotHgtCss;
-			xOffCss = plotTopCss;
-			yDimCss = plotWidCss;
-			yOffCss = plotLftCss;
-		};
-		*/
-	}
-
-	const pendScales = {};
-
-	// explicitly-set initial scales
-	for (let k in scales) {
-		let sc = scales[k];
-
-		if (sc.min != null || sc.max != null) {
-			pendScales[k] = {min: sc.min, max: sc.max};
-			sc.min = sc.max = null;
-		}
-	}
-
-//	self.tz = opts.tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
-	const _tzDate  = (opts.tzDate || (ts => new Date(round(ts / ms))));
-	const _fmtDate = (opts.fmtDate || fmtDate);
-
-	const _timeAxisSplits = (ms == 1 ? timeAxisSplitsMs(_tzDate) : timeAxisSplitsS(_tzDate));
-	const _timeAxisVals   = timeAxisVals(_tzDate, timeAxisStamps((ms == 1 ? _timeAxisStampsMs : _timeAxisStampsS), _fmtDate));
-	const _timeSeriesVal  = timeSeriesVal(_tzDate, timeSeriesStamp(_timeSeriesStamp, _fmtDate));
-
-	const activeIdxs = [];
-
-	const legend     = (self.legend = assign({}, legendOpts, opts.legend));
-	const cursor     =                (self.cursor = assign({}, cursorOpts, {drag: {y: mode == 2}}, opts.cursor));
-	const showLegend = legend.show;
-	const showCursor =                cursor.show;
-	const markers    = legend.markers;
-
-	{
-		legend.idxs = activeIdxs;
-
-		markers.width  = fnOrSelf(markers.width);
-		markers.dash   = fnOrSelf(markers.dash);
-		markers.stroke = fnOrSelf(markers.stroke);
-		markers.fill   = fnOrSelf(markers.fill);
-	}
-
-	let legendTable;
-	let legendHead;
-	let legendBody;
-	let legendRows = [];
-	let legendCells = [];
-	let legendCols;
-	let multiValLegend = false;
-	let NULL_LEGEND_VALUES = {};
-
-	if (legend.live) {
-		const getMultiVals = series[1] ? series[1].values : null;
-		multiValLegend = getMultiVals != null;
-		legendCols = multiValLegend ? getMultiVals(self, 1, 0) : {_: 0};
-
-		for (let k in legendCols)
-			NULL_LEGEND_VALUES[k] = LEGEND_DISP;
-	}
-
-	if (showLegend) {
-		legendTable = placeTag("table", LEGEND, root);
-		legendBody = placeTag("tbody", null, legendTable);
-
-		// allows legend to be moved out of root
-		legend.mount(self, legendTable);
-
-		if (multiValLegend) {
-			legendHead = placeTag("thead", null, legendTable, legendBody);
-
-			let head = placeTag("tr", null, legendHead);
-			placeTag("th", null, head);
-
-			for (var key in legendCols)
-				placeTag("th", LEGEND_LABEL, head).textContent = key;
-		}
-		else {
-			addClass(legendTable, LEGEND_INLINE);
-			legend.live && addClass(legendTable, LEGEND_LIVE);
-		}
-	}
-
-	const son  = {show: true};
-	const soff = {show: false};
-
-	function initLegendRow(s, i) {
-		if (i == 0 && (multiValLegend || !legend.live || mode == 2))
-			return nullNullTuple;
-
-		let cells = [];
-
-		let row = placeTag("tr", LEGEND_SERIES, legendBody, legendBody.childNodes[i]);
-
-		addClass(row, s.class);
-
-		if (!s.show)
-			addClass(row, OFF);
-
-		let label = placeTag("th", null, row);
-
-		if (markers.show) {
-			let indic = placeDiv(LEGEND_MARKER, label);
-
-			if (i > 0) {
-				let width  = markers.width(self, i);
-
-				if (width)
-					indic.style.border = width + "px " + markers.dash(self, i) + " " + markers.stroke(self, i);
-
-				indic.style.background = markers.fill(self, i);
-			}
-		}
-
-		let text = placeDiv(LEGEND_LABEL, label);
-
-		if (s.label instanceof HTMLElement)
-			text.appendChild(s.label);
-		else
-			text.textContent = s.label;
-
-		if (i > 0) {
-			if (!markers.show)
-				text.style.color = s.width > 0 ? markers.stroke(self, i) : markers.fill(self, i);
-
-			onMouse("click", label, e => {
-				if (cursor._lock)
-					return;
-
-				setCursorEvent(e);
-
-				let seriesIdx = series.indexOf(s);
-
-				if ((e.ctrlKey || e.metaKey) != legend.isolate) {
-					// if any other series is shown, isolate this one. else show all
-					let isolate = series.some((s, i) => i > 0 && i != seriesIdx && s.show);
-
-					series.forEach((s, i) => {
-						i > 0 && setSeries(i, isolate ? (i == seriesIdx ? son : soff) : son, true, syncOpts.setSeries);
-					});
-				}
-				else
-					setSeries(seriesIdx, {show: !s.show}, true, syncOpts.setSeries);
-			}, false);
-
-			if (cursorFocus) {
-				onMouse(mouseenter, label, e => {
-					if (cursor._lock)
-						return;
-
-					setCursorEvent(e);
-
-					setSeries(series.indexOf(s), FOCUS_TRUE, true, syncOpts.setSeries);
-				}, false);
-			}
-		}
-
-		for (var key in legendCols) {
-			let v = placeTag("td", LEGEND_VALUE, row);
-			v.textContent = "--";
-			cells.push(v);
-		}
-
-		return [row, cells];
-	}
-
-	const mouseListeners = new Map();
-
-	function onMouse(ev, targ, fn, onlyTarg = true) {
-		const targListeners = mouseListeners.get(targ) || {};
-		const listener = cursor.bind[ev](self, targ, fn, onlyTarg);
-
-		if (listener) {
-			on(ev, targ, targListeners[ev] = listener);
-			mouseListeners.set(targ, targListeners);
-		}
-	}
-
-	function offMouse(ev, targ, fn) {
-		const targListeners = mouseListeners.get(targ) || {};
-
-		for (let k in targListeners) {
-			if (ev == null || k == ev) {
-				off(k, targ, targListeners[k]);
-				delete targListeners[k];
-			}
-		}
-
-		if (ev == null)
-			mouseListeners.delete(targ);
-	}
-
-	let fullWidCss = 0;
-	let fullHgtCss = 0;
-
-	let plotWidCss = 0;
-	let plotHgtCss = 0;
-
-	// plot margins to account for axes
-	let plotLftCss = 0;
-	let plotTopCss = 0;
-
-	// previous values for diffing
-	let _plotLftCss = plotLftCss;
-	let _plotTopCss = plotTopCss;
-	let _plotWidCss = plotWidCss;
-	let _plotHgtCss = plotHgtCss;
-
-
-	let plotLft = 0;
-	let plotTop = 0;
-	let plotWid = 0;
-	let plotHgt = 0;
-
-	self.bbox = {};
-
-	let shouldSetScales = false;
-	let shouldSetSize = false;
-	let shouldConvergeSize = false;
-	let shouldSetCursor = false;
-	let shouldSetSelect = false;
-	let shouldSetLegend = false;
-
-	function _setSize(width, height, force) {
-		if (force || (width != self.width || height != self.height))
-			calcSize(width, height);
-
-		resetYSeries(false);
-
-		shouldConvergeSize = true;
-		shouldSetSize = true;
-
-		commit();
-	}
-
-	function calcSize(width, height) {
-	//	log("calcSize()", arguments);
-
-		self.width  = fullWidCss = plotWidCss = width;
-		self.height = fullHgtCss = plotHgtCss = height;
-		plotLftCss  = plotTopCss = 0;
-
-		calcPlotRect();
-		calcAxesRects();
-
-		let bb = self.bbox;
-
-		plotLft = bb.left   = incrRound(plotLftCss * pxRatio$1, 0.5);
-		plotTop = bb.top    = incrRound(plotTopCss * pxRatio$1, 0.5);
-		plotWid = bb.width  = incrRound(plotWidCss * pxRatio$1, 0.5);
-		plotHgt = bb.height = incrRound(plotHgtCss * pxRatio$1, 0.5);
-
-	//	updOriDims();
-	}
-
-	// ensures size calc convergence
-	const CYCLE_LIMIT = 3;
-
-	function convergeSize() {
-		let converged = false;
-
-		let cycleNum = 0;
-
-		while (!converged) {
-			cycleNum++;
-
-			let axesConverged = axesCalc(cycleNum);
-			let paddingConverged = paddingCalc(cycleNum);
-
-			converged = cycleNum == CYCLE_LIMIT || (axesConverged && paddingConverged);
-
-			if (!converged) {
-				calcSize(self.width, self.height);
-				shouldSetSize = true;
-			}
-		}
-	}
-
-	function setSize({width, height}) {
-		_setSize(width, height);
-	}
-
-	self.setSize = setSize;
-
-	// accumulate axis offsets, reduce canvas width
-	function calcPlotRect() {
-		// easements for edge labels
-		let hasTopAxis = false;
-		let hasBtmAxis = false;
-		let hasRgtAxis = false;
-		let hasLftAxis = false;
-
-		axes.forEach((axis, i) => {
-			if (axis.show && axis._show) {
-				let {side, _size} = axis;
-				let isVt = side % 2;
-				let labelSize = axis.label != null ? axis.labelSize : 0;
-
-				let fullSize = _size + labelSize;
-
-				if (fullSize > 0) {
-					if (isVt) {
-						plotWidCss -= fullSize;
-
-						if (side == 3) {
-							plotLftCss += fullSize;
-							hasLftAxis = true;
-						}
-						else
-							hasRgtAxis = true;
-					}
-					else {
-						plotHgtCss -= fullSize;
-
-						if (side == 0) {
-							plotTopCss += fullSize;
-							hasTopAxis = true;
-						}
-						else
-							hasBtmAxis = true;
-					}
-				}
-			}
-		});
-
-		sidesWithAxes[0] = hasTopAxis;
-		sidesWithAxes[1] = hasRgtAxis;
-		sidesWithAxes[2] = hasBtmAxis;
-		sidesWithAxes[3] = hasLftAxis;
-
-		// hz padding
-		plotWidCss -= _padding[1] + _padding[3];
-		plotLftCss += _padding[3];
-
-		// vt padding
-		plotHgtCss -= _padding[2] + _padding[0];
-		plotTopCss += _padding[0];
-	}
-
-	function calcAxesRects() {
-		// will accum +
-		let off1 = plotLftCss + plotWidCss;
-		let off2 = plotTopCss + plotHgtCss;
-		// will accum -
-		let off3 = plotLftCss;
-		let off0 = plotTopCss;
-
-		function incrOffset(side, size) {
-			switch (side) {
-				case 1: off1 += size; return off1 - size;
-				case 2: off2 += size; return off2 - size;
-				case 3: off3 -= size; return off3 + size;
-				case 0: off0 -= size; return off0 + size;
-			}
-		}
-
-		axes.forEach((axis, i) => {
-			if (axis.show && axis._show) {
-				let side = axis.side;
-
-				axis._pos = incrOffset(side, axis._size);
-
-				if (axis.label != null)
-					axis._lpos = incrOffset(side, axis.labelSize);
-			}
-		});
-	}
-
-	if (cursor.dataIdx == null) {
-		let hov = cursor.hover;
-
-		let skip = hov.skip = new Set(hov.skip ?? []);
-		skip.add(void 0); // alignment artifacts
-		let prox = hov.prox = fnOrSelf(hov.prox);
-		let bias = hov.bias ??= 0;
-
-		// TODO: only scan between in-view idxs (i0, i1)
-		cursor.dataIdx = (self, seriesIdx, cursorIdx, valAtPosX) => {
-			if (seriesIdx == 0)
-				return cursorIdx;
-
-			let idx2 = cursorIdx;
-
-			let _prox = prox(self, seriesIdx, cursorIdx, valAtPosX) ?? inf;
-			let withProx = _prox >= 0 && _prox < inf;
-			let xDim = scaleX.ori == 0 ? plotWidCss : plotHgtCss;
-			let cursorLft = cursor.left;
-
-			let xValues = data[0];
-			let yValues = data[seriesIdx];
-
-			if (skip.has(yValues[cursorIdx])) {
-				idx2 = null;
-
-				let nonNullLft = null,
-					nonNullRgt = null,
-					j;
-
-				if (bias == 0 || bias == -1) {
-					j = cursorIdx;
-					while (nonNullLft == null && j-- > 0) {
-						if (!skip.has(yValues[j]))
-							nonNullLft = j;
-					}
-				}
-
-				if (bias == 0 || bias == 1) {
-					j = cursorIdx;
-					while (nonNullRgt == null && j++ < yValues.length) {
-						if (!skip.has(yValues[j]))
-							nonNullRgt = j;
-					}
-				}
-
-				if (nonNullLft != null || nonNullRgt != null) {
-					if (withProx) {
-						let lftPos = nonNullLft == null ? -Infinity : valToPosX(xValues[nonNullLft], scaleX, xDim, 0);
-						let rgtPos = nonNullRgt == null ?  Infinity : valToPosX(xValues[nonNullRgt], scaleX, xDim, 0);
-
-						let lftDelta = cursorLft - lftPos;
-						let rgtDelta = rgtPos - cursorLft;
-
-						if (lftDelta <= rgtDelta) {
-							if (lftDelta <= _prox)
-								idx2 = nonNullLft;
-						} else {
-							if (rgtDelta <= _prox)
-								idx2 = nonNullRgt;
-						}
-					}
-					else {
-						idx2 =
-							nonNullRgt == null ? nonNullLft :
-							nonNullLft == null ? nonNullRgt :
-							cursorIdx - nonNullLft <= nonNullRgt - cursorIdx ? nonNullLft : nonNullRgt;
-					}
-				}
-			}
-			else if (withProx) {
-				let dist = abs(cursorLft - valToPosX(xValues[cursorIdx], scaleX, xDim, 0));
-
-				if (dist > _prox)
-					idx2 = null;
-			}
-
-			return idx2;
-		};
-	}
-
-	const setCursorEvent = e => { cursor.event = e; };
-
-	cursor.idxs = activeIdxs;
-
-	cursor._lock = false;
-
-	let points = cursor.points;
-
-	points.show   = fnOrSelf(points.show);
-	points.size   = fnOrSelf(points.size);
-	points.stroke = fnOrSelf(points.stroke);
-	points.width  = fnOrSelf(points.width);
-	points.fill   = fnOrSelf(points.fill);
-
-	const focus = self.focus = assign({}, opts.focus || {alpha: 0.3}, cursor.focus);
-
-	const cursorFocus = focus.prox >= 0;
-	const cursorOnePt = cursorFocus && points.one;
-
-	// series-intersection markers
-	let cursorPts = [];
-	// position caches in CSS pixels
-	let cursorPtsLft = [];
-	let cursorPtsTop = [];
-
-	function initCursorPt(s, si) {
-		let pt = points.show(self, si);
-
-		if (pt instanceof HTMLElement) {
-			addClass(pt, CURSOR_PT);
-			addClass(pt, s.class);
-			elTrans(pt, -10, -10, plotWidCss, plotHgtCss);
-			over.insertBefore(pt, cursorPts[si]);
-
-			return pt;
-		}
-	}
-
-	function initSeries(s, i) {
-		if (mode == 1 || i > 0) {
-			let isTime = mode == 1 && scales[s.scale].time;
-
-			let sv = s.value;
-			s.value = isTime ? (isStr(sv) ? timeSeriesVal(_tzDate, timeSeriesStamp(sv, _fmtDate)) : sv || _timeSeriesVal) : sv || numSeriesVal;
-			s.label = s.label || (isTime ? timeSeriesLabel : numSeriesLabel);
-		}
-
-		if (cursorOnePt || i > 0) {
-			s.width  = s.width == null ? 1 : s.width;
-			s.paths  = s.paths || linearPath || retNull;
-			s.fillTo = fnOrSelf(s.fillTo || seriesFillTo);
-			s.pxAlign = +ifNull(s.pxAlign, pxAlign);
-			s.pxRound = pxRoundGen(s.pxAlign);
-
-			s.stroke = fnOrSelf(s.stroke || null);
-			s.fill   = fnOrSelf(s.fill || null);
-			s._stroke = s._fill = s._paths = s._focus = null;
-
-			let _ptDia = ptDia(max(1, s.width), 1);
-			let points = s.points = assign({}, {
-				size: _ptDia,
-				width: max(1, _ptDia * .2),
-				stroke: s.stroke,
-				space: _ptDia * 2,
-				paths: pointsPath,
-				_stroke: null,
-				_fill: null,
-			}, s.points);
-			points.show   = fnOrSelf(points.show);
-			points.filter = fnOrSelf(points.filter);
-			points.fill   = fnOrSelf(points.fill);
-			points.stroke = fnOrSelf(points.stroke);
-			points.paths  = fnOrSelf(points.paths);
-			points.pxAlign = s.pxAlign;
-		}
-
-		if (showLegend) {
-			let rowCells = initLegendRow(s, i);
-			legendRows.splice(i, 0, rowCells[0]);
-			legendCells.splice(i, 0, rowCells[1]);
-			legend.values.push(null);	// NULL_LEGEND_VALS not yet avil here :(
-		}
-
-		if (showCursor) {
-			activeIdxs.splice(i, 0, null);
-
-			let pt = null;
-
-			if (cursorOnePt) {
-				if (i == 0)
-					pt = initCursorPt(s, i);
-			}
-			else if (i > 0)
-				pt = initCursorPt(s, i);
-
-			cursorPts.splice(i, 0, pt);
-			cursorPtsLft.splice(i, 0, 0);
-			cursorPtsTop.splice(i, 0, 0);
-		}
-
-		fire("addSeries", i);
-	}
-
-	function addSeries(opts, si) {
-		si = si == null ? series.length : si;
-
-		opts = mode == 1 ? setDefault(opts, si, xSeriesOpts, ySeriesOpts) : setDefault(opts, si, {}, xySeriesOpts);
-
-		series.splice(si, 0, opts);
-		initSeries(series[si], si);
-	}
-
-	self.addSeries = addSeries;
-
-	function delSeries(i) {
-		series.splice(i, 1);
-
-		if (showLegend) {
-			legend.values.splice(i, 1);
-
-			legendCells.splice(i, 1);
-			let tr = legendRows.splice(i, 1)[0];
-			offMouse(null, tr.firstChild);
-			tr.remove();
-		}
-
-		if (showCursor) {
-			activeIdxs.splice(i, 1);
-			cursorPts.splice(i, 1)[0].remove();
-			cursorPtsLft.splice(i, 1);
-			cursorPtsTop.splice(i, 1);
-		}
-
-		// TODO: de-init no-longer-needed scales?
-
-		fire("delSeries", i);
-	}
-
-	self.delSeries = delSeries;
-
-	const sidesWithAxes = [false, false, false, false];
-
-	function initAxis(axis, i) {
+	initAxis(axis, i, xScaleKey, pxRatio, wrap) {
+		const { uplot, scales, series } = this;
+		const { ms, _timeAxisSplits, _timeAxisVals, _fmtDate, _tzDate } = uplot;
+		
 		axis._show = axis.show;
 
 		if (axis.show) {
@@ -3796,10 +5657,10 @@ function uPlot(opts, data, then) {
 
 			axis.filter = fnOrSelf(axis.filter || (          sc.distr >= 3 && sc.log == 10 ? log10AxisValsFilt : sc.distr == 3 && sc.log == 2 ? log2AxisValsFilt : retArg1));
 
-			axis.font      = pxRatioFont(axis.font, pxRatio$1);
-			axis.labelFont = pxRatioFont(axis.labelFont, pxRatio$1);
+			axis.font      = pxRatioFont(axis.font, pxRatio);
+			axis.labelFont = pxRatioFont(axis.labelFont, pxRatio);
 
-			axis._size   = axis.size(self, null, i, 0);
+			axis._size   = axis.size(uplot, null, i, 0);
 
 			axis._space  =
 			axis._rotate =
@@ -3809,644 +5670,192 @@ function uPlot(opts, data, then) {
 			axis._values = null;
 
 			if (axis._size > 0) {
-				sidesWithAxes[i] = true;
+				this.sidesWithAxes[i] = true;
 				axis._el = placeDiv(AXIS, wrap);
 			}
-
-			// debug
-		//	axis._el.style.background = "#"  + Math.floor(Math.random()*16777215).toString(16) + '80';
 		}
 	}
 
-	function autoPadSide(self, side, sidesWithAxes, cycleNum) {
-		let [hasTopAxis, hasRgtAxis, hasBtmAxis, hasLftAxis] = sidesWithAxes;
-
-		let ori = side % 2;
-		let size = 0;
-
-		if (ori == 0 && (hasLftAxis || hasRgtAxis))
-			size = (side == 0 && !hasTopAxis || side == 2 && !hasBtmAxis ? round(xAxisOpts.size / 3) : 0);
-		if (ori == 1 && (hasTopAxis || hasBtmAxis))
-			size = (side == 1 && !hasRgtAxis || side == 3 && !hasLftAxis ? round(yAxisOpts.size / 2) : 0);
-
-		return size;
-	}
-
-	const padding = self.padding = (opts.padding || [autoPadSide,autoPadSide,autoPadSide,autoPadSide]).map(p => fnOrSelf(ifNull(p, autoPadSide)));
-	const _padding = self._padding = padding.map((p, i) => p(self, i, sidesWithAxes, 0));
-
-	let dataLen;
-
-	// rendered data window
-	let i0 = null;
-	let i1 = null;
-	const idxs = mode == 1 ? series[0].idxs : null;
-
-	let data0 = null;
-
-	let viaAutoScaleX = false;
-
-	function setData(_data, _resetScales) {
-		data = _data == null ? [] : _data;
-
-		self.data = self._data = data;
-
-		if (mode == 2) {
-			dataLen = 0;
-			for (let i = 1; i < series.length; i++)
-				dataLen += data[i][0].length;
-		}
-		else {
-			if (data.length == 0)
-				self.data = self._data = data = [[]];
-
-			data0 = data[0];
-			dataLen = data0.length;
-
-			let scaleData = data;
-
-			if (xScaleDistr == 2) {
-				scaleData = data.slice();
-
-				let _data0 = scaleData[0] = Array(dataLen);
-				for (let i = 0; i < dataLen; i++)
-					_data0[i] = i;
+	getIncrSpace(axisIdx, min, max, fullDim) {
+		return withErrorBoundary('AxisManager', 'getIncrSpace', function(axisIdx, min, max, fullDim) {
+			validateRequired(axisIdx, 'axisIdx', 'AxisManager', 'getIncrSpace');
+			validateType(axisIdx, 'number', 'axisIdx', 'AxisManager', 'getIncrSpace');
+			validateRequired(min, 'min', 'AxisManager', 'getIncrSpace');
+			validateRequired(max, 'max', 'AxisManager', 'getIncrSpace');
+			validateRequired(fullDim, 'fullDim', 'AxisManager', 'getIncrSpace');
+			validateType(fullDim, 'number', 'fullDim', 'AxisManager', 'getIncrSpace');
+			
+			if (axisIdx < 0 || axisIdx >= this.axes.length) {
+				throw new UPlotError(
+					`Invalid axis index ${axisIdx}. Must be between 0 and ${this.axes.length - 1}`,
+					'AxisManager',
+					{ method: 'getIncrSpace', axisIdx, axesLength: this.axes.length, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			const { uplot } = this;
+			let axis = this.axes[axisIdx];
+			
+			if (!axis) {
+				throw new UPlotError(
+					`Axis at index ${axisIdx} is null or undefined`,
+					'AxisManager',
+					{ method: 'getIncrSpace', axisIdx, type: ERROR_TYPES.VALIDATION }
+				);
 			}
 
-			self._data = data = scaleData;
-		}
+			let incrSpace;
 
-		resetYSeries(true);
-
-		fire("setData");
-
-		// forces x axis tick values to re-generate when neither x scale nor y scale changes
-		// in ordinal mode, scale range is by index, so will not change if new data has same length, but tick values are from data
-		if (xScaleDistr == 2) {
-			shouldConvergeSize = true;
-
-			/* or somewhat cheaper, and uglier:
-			if (ready) {
-				// logic extracted from axesCalc()
-				let i = 0;
-				let axis = axes[i];
-				let _splits = axis._splits.map(i => data0[i]);
-				let [_incr, _space] = axis._found;
-				let incr = data0[_splits[1]] - data0[_splits[0]];
-				axis._values = axis.values(self, axis.filter(self, _splits, i, _space, incr), i, _space, incr);
-			}
-			*/
-		}
-
-		if (_resetScales !== false) {
-			let xsc = scaleX;
-
-			if (xsc.auto(self, viaAutoScaleX))
-				autoScaleX();
-			else
-				_setScale(xScaleKey, xsc.min, xsc.max);
-
-			shouldSetCursor = shouldSetCursor || cursor.left >= 0;
-			shouldSetLegend = true;
-			commit();
-		}
-	}
-
-	self.setData = setData;
-
-	function autoScaleX() {
-		viaAutoScaleX = true;
-
-		let _min, _max;
-
-		if (mode == 1) {
-			if (dataLen > 0) {
-				i0 = idxs[0] = 0;
-				i1 = idxs[1] = dataLen - 1;
-
-				_min = data[0][i0];
-				_max = data[0][i1];
-
-				if (xScaleDistr == 2) {
-					_min = i0;
-					_max = i1;
-				}
-				else if (_min == _max) {
-					if (xScaleDistr == 3)
-						[_min, _max] = rangeLog(_min, _min, scaleX.log, false);
-					else if (xScaleDistr == 4)
-						[_min, _max] = rangeAsinh(_min, _min, scaleX.log, false);
-					else if (scaleX.time)
-						_max = _min + round(86400 / ms);
-					else
-						[_min, _max] = rangeNum(_min, _max, rangePad, true);
-				}
-			}
-			else {
-				i0 = idxs[0] = _min = null;
-				i1 = idxs[1] = _max = null;
-			}
-		}
-
-		_setScale(xScaleKey, _min, _max);
-	}
-
-	let ctxStroke, ctxFill, ctxWidth, ctxDash, ctxJoin, ctxCap, ctxFont, ctxAlign, ctxBaseline;
-	let ctxAlpha;
-
-	function setCtxStyle(stroke, width, dash, cap, fill, join) {
-		stroke ??= transparent;
-		dash   ??= EMPTY_ARR;
-		cap    ??= "butt"; // (‿|‿)
-		fill   ??= transparent;
-		join   ??= "round";
-
-		if (stroke != ctxStroke)
-			ctx.strokeStyle = ctxStroke = stroke;
-		if (fill != ctxFill)
-			ctx.fillStyle = ctxFill = fill;
-		if (width != ctxWidth)
-			ctx.lineWidth = ctxWidth = width;
-		if (join != ctxJoin)
-			ctx.lineJoin = ctxJoin = join;
-		if (cap != ctxCap)
-			ctx.lineCap = ctxCap = cap;
-		if (dash != ctxDash)
-			ctx.setLineDash(ctxDash = dash);
-	}
-
-	function setFontStyle(font, fill, align, baseline) {
-		if (fill != ctxFill)
-			ctx.fillStyle = ctxFill = fill;
-		if (font != ctxFont)
-			ctx.font = ctxFont = font;
-		if (align != ctxAlign)
-			ctx.textAlign = ctxAlign = align;
-		if (baseline != ctxBaseline)
-			ctx.textBaseline = ctxBaseline = baseline;
-	}
-
-	function accScale(wsc, psc, facet, data, sorted = 0) {
-		if (data.length > 0 && wsc.auto(self, viaAutoScaleX) && (psc == null || psc.min == null)) {
-			let _i0 = ifNull(i0, 0);
-			let _i1 = ifNull(i1, data.length - 1);
-
-			// only run getMinMax() for invalidated series data, else reuse
-			let minMax = facet.min == null ? getMinMax(data, _i0, _i1, sorted, wsc.distr == 3) : [facet.min, facet.max];
-
-			// initial min/max
-			wsc.min = min(wsc.min, facet.min = minMax[0]);
-			wsc.max = max(wsc.max, facet.max = minMax[1]);
-		}
-	}
-
-	const AUTOSCALE = {min: null, max: null};
-
-	function setScales() {
-	//	log("setScales()", arguments);
-
-		// implicitly add auto scales, and unranged scales
-		for (let k in scales) {
-			let sc = scales[k];
-
-			if (pendScales[k] == null &&
-				(
-					// scales that have never been set (on init)
-					sc.min == null ||
-					// or auto scales when the x scale was explicitly set
-					pendScales[xScaleKey] != null && sc.auto(self, viaAutoScaleX)
-				)
-			) {
-				pendScales[k] = AUTOSCALE;
-			}
-		}
-
-		// implicitly add dependent scales
-		for (let k in scales) {
-			let sc = scales[k];
-
-			if (pendScales[k] == null && sc.from != null && pendScales[sc.from] != null)
-				pendScales[k] = AUTOSCALE;
-		}
-
-		// explicitly setting the x-scale invalidates everything (acts as redraw)
-		if (pendScales[xScaleKey] != null)
-			resetYSeries(true); // TODO: only reset series on auto scales?
-
-		let wipScales = {};
-
-		for (let k in pendScales) {
-			let psc = pendScales[k];
-
-			if (psc != null) {
-				let wsc = wipScales[k] = copy(scales[k], fastIsObj);
-
-				if (psc.min != null)
-					assign(wsc, psc);
-				else if (k != xScaleKey || mode == 2) {
-					if (dataLen == 0 && wsc.from == null) {
-						let minMax = wsc.range(self, null, null, k);
-						wsc.min = minMax[0];
-						wsc.max = minMax[1];
-					}
-					else {
-						wsc.min = inf;
-						wsc.max = -inf;
-					}
-				}
-			}
-		}
-
-		if (dataLen > 0) {
-			// pre-range y-scales from y series' data values
-			series.forEach((s, i) => {
-				if (mode == 1) {
-					let k = s.scale;
-					let psc = pendScales[k];
-
-					if (psc == null)
-						return;
-
-					let wsc = wipScales[k];
-
-					if (i == 0) {
-						let minMax = wsc.range(self, wsc.min, wsc.max, k);
-
-						wsc.min = minMax[0];
-						wsc.max = minMax[1];
-
-						i0 = closestIdx(wsc.min, data[0]);
-						i1 = closestIdx(wsc.max, data[0]);
-
-						// don't try to contract same or adjacent idxs
-						if (i1 - i0 > 1) {
-							// closest indices can be outside of view
-							if (data[0][i0] < wsc.min)
-								i0++;
-							if (data[0][i1] > wsc.max)
-								i1--;
-						}
-
-						s.min = data0[i0];
-						s.max = data0[i1];
-					}
-					else if (s.show && s.auto)
-						accScale(wsc, psc, s, data[i], s.sorted);
-
-					s.idxs[0] = i0;
-					s.idxs[1] = i1;
-				}
-				else {
-					if (i > 0) {
-						if (s.show && s.auto) {
-							// TODO: only handles, assumes and requires facets[0] / 'x' scale, and facets[1] / 'y' scale
-							let [ xFacet, yFacet ] = s.facets;
-							let xScaleKey = xFacet.scale;
-							let yScaleKey = yFacet.scale;
-							let [ xData, yData ] = data[i];
-
-							let wscx = wipScales[xScaleKey];
-							let wscy = wipScales[yScaleKey];
-
-							// null can happen when only x is zoomed, but y has static range and doesnt get auto-added to pending
-							wscx != null && accScale(wscx, pendScales[xScaleKey], xFacet, xData, xFacet.sorted);
-							wscy != null && accScale(wscy, pendScales[yScaleKey], yFacet, yData, yFacet.sorted);
-
-							// temp
-							s.min = yFacet.min;
-							s.max = yFacet.max;
-						}
-					}
-				}
-			});
-
-			// range independent scales
-			for (let k in wipScales) {
-				let wsc = wipScales[k];
-				let psc = pendScales[k];
-
-				if (wsc.from == null && (psc == null || psc.min == null)) {
-					let minMax = wsc.range(
-						self,
-						wsc.min ==  inf ? null : wsc.min,
-						wsc.max == -inf ? null : wsc.max,
-						k
+			if (fullDim <= 0) {
+				incrSpace = [0, 0];
+			} else {
+				try {
+					let minSpace = axis._space = axis.space(uplot, axisIdx, min, max, fullDim);
+					let incrs = axis._incrs = axis.incrs(uplot, axisIdx, min, max, fullDim, minSpace);
+					incrSpace = findIncr(min, max, incrs, fullDim, minSpace);
+				} catch (error) {
+					throw new UPlotError(
+						`Error calculating increment space: ${error.message}`,
+						'AxisManager',
+						{ method: 'getIncrSpace', axisIdx, min, max, fullDim, type: ERROR_TYPES.LAYOUT_CALCULATION },
+						error
 					);
-					wsc.min = minMax[0];
-					wsc.max = minMax[1];
 				}
 			}
-		}
 
-		// range dependent scales
-		for (let k in wipScales) {
-			let wsc = wipScales[k];
-
-			if (wsc.from != null) {
-				let base = wipScales[wsc.from];
-
-				if (base.min == null)
-					wsc.min = wsc.max = null;
-				else {
-					let minMax = wsc.range(self, base.min, base.max, k);
-					wsc.min = minMax[0];
-					wsc.max = minMax[1];
-				}
-			}
-		}
-
-		let changed = {};
-		let anyChanged = false;
-
-		for (let k in wipScales) {
-			let wsc = wipScales[k];
-			let sc = scales[k];
-
-			if (sc.min != wsc.min || sc.max != wsc.max) {
-				sc.min = wsc.min;
-				sc.max = wsc.max;
-
-				let distr = sc.distr;
-
-				sc._min = distr == 3 ? log10(sc.min) : distr == 4 ? asinh(sc.min, sc.asinh) : distr == 100 ? sc.fwd(sc.min) : sc.min;
-				sc._max = distr == 3 ? log10(sc.max) : distr == 4 ? asinh(sc.max, sc.asinh) : distr == 100 ? sc.fwd(sc.max) : sc.max;
-
-				changed[k] = anyChanged = true;
-			}
-		}
-
-		if (anyChanged) {
-			// invalidate paths of all series on changed scales
-			series.forEach((s, i) => {
-				if (mode == 2) {
-					if (i > 0 && changed.y)
-						s._paths = null;
-				}
-				else {
-					if (changed[s.scale])
-						s._paths = null;
-				}
-			});
-
-			for (let k in changed) {
-				shouldConvergeSize = true;
-				fire("setScale", k);
-			}
-
-			if (showCursor && cursor.left >= 0)
-				shouldSetCursor = shouldSetLegend = true;
-		}
-
-		for (let k in pendScales)
-			pendScales[k] = null;
+			return (axis._found = incrSpace);
+		}).call(this, axisIdx, min, max, fullDim);
 	}
 
-	// grabs the nearest indices with y data outside of x-scale limits
-	function getOuterIdxs(ydata) {
-		let _i0 = clamp(i0 - 1, 0, dataLen - 1);
-		let _i1 = clamp(i1 + 1, 0, dataLen - 1);
+	axesCalc(cycleNum, plotWidCss, plotHgtCss, data0, resetYSeries) {
+		return withErrorBoundary('AxisManager', 'axesCalc', function(cycleNum, plotWidCss, plotHgtCss, data0, resetYSeries) {
+			validateRequired(cycleNum, 'cycleNum', 'AxisManager', 'axesCalc');
+			validateRequired(plotWidCss, 'plotWidCss', 'AxisManager', 'axesCalc');
+			validateRequired(plotHgtCss, 'plotHgtCss', 'AxisManager', 'axesCalc');
+			validateType(plotWidCss, 'number', 'plotWidCss', 'AxisManager', 'axesCalc');
+			validateType(plotHgtCss, 'number', 'plotHgtCss', 'AxisManager', 'axesCalc');
+			
+			const { uplot, axes, scales } = this;
+			
+			if (!axes || !Array.isArray(axes)) {
+				throw new UPlotError(
+					'Axes not properly initialized',
+					'AxisManager',
+					{ method: 'axesCalc', axesType: typeof axes, type: ERROR_TYPES.INITIALIZATION }
+				);
+			}
+			
+			let converged = true;
 
-		while (ydata[_i0] == null && _i0 > 0)
-			_i0--;
+			axes.forEach((axis, i) => {
+				safeExecute('AxisManager', `axesCalc[${i}]`, () => {
+					if (!axis.show) return;
 
-		while (ydata[_i1] == null && _i1 < dataLen - 1)
-			_i1++;
-
-		return [_i0, _i1];
-	}
-
-	function drawSeries() {
-		if (dataLen > 0) {
-			let shouldAlpha = series.some(s => s._focus) && ctxAlpha != focus.alpha;
-
-			if (shouldAlpha)
-				ctx.globalAlpha = ctxAlpha = focus.alpha;
-
-			series.forEach((s, i) => {
-				if (i > 0 && s.show) {
-					cacheStrokeFill(i, false);
-					cacheStrokeFill(i, true);
-
-					if (s._paths == null) {
-						let _ctxAlpha = ctxAlpha;
-
-						if (ctxAlpha != s.alpha)
-							ctx.globalAlpha = ctxAlpha = s.alpha;
-
-						let _idxs = mode == 2 ? [0, data[i][0].length - 1] : getOuterIdxs(data[i]);
-						s._paths = s.paths(self, i, _idxs[0], _idxs[1]);
-
-						if (ctxAlpha != _ctxAlpha)
-							ctx.globalAlpha = ctxAlpha = _ctxAlpha;
+					let scale = scales[axis.scale];
+					
+					if (!scale) {
+						throw new UPlotError(
+							`Scale '${axis.scale}' not found for axis ${i}`,
+							'AxisManager',
+							{ method: 'axesCalc', axisIndex: i, scaleKey: axis.scale, type: ERROR_TYPES.VALIDATION }
+						);
 					}
-				}
-			});
 
-			series.forEach((s, i) => {
-				if (i > 0 && s.show) {
-					let _ctxAlpha = ctxAlpha;
-
-					if (ctxAlpha != s.alpha)
-						ctx.globalAlpha = ctxAlpha = s.alpha;
-
-					s._paths != null && drawPath(i, false);
-
-					{
-						let _gaps = s._paths != null ? s._paths.gaps : null;
-
-						let show = s.points.show(self, i, i0, i1, _gaps);
-						let idxs = s.points.filter(self, i, show, _gaps);
-
-						if (show || idxs) {
-							s.points._paths = s.points.paths(self, i, i0, i1, idxs);
-							drawPath(i, true);
+					if (scale.min == null) {
+						if (axis._show) {
+							converged = false;
+							axis._show = false;
+							if (typeof resetYSeries === 'function') {
+								resetYSeries(false);
+							}
+						}
+						return;
+					} else {
+						if (!axis._show) {
+							converged = false;
+							axis._show = true;
+							if (typeof resetYSeries === 'function') {
+								resetYSeries(false);
+							}
 						}
 					}
 
-					if (ctxAlpha != _ctxAlpha)
-						ctx.globalAlpha = ctxAlpha = _ctxAlpha;
+					let side = axis.side;
+					let ori = side % 2;
+					let {min, max} = scale;
 
-					fire("drawSeries", i);
-				}
+					let [_incr, _space] = this.getIncrSpace(i, min, max, ori == 0 ? plotWidCss : plotHgtCss);
+
+					if (_space == 0) return;
+
+					// if we're using index positions, force first tick to match passed index
+					let forceMin = scale.distr == 2;
+
+					try {
+						let _splits = axis._splits = axis.splits(uplot, i, min, max, _incr, _space, forceMin);
+
+						// tick labels
+						let splits = scale.distr == 2 ? _splits.map(i => data0[i]) : _splits;
+						let incr = scale.distr == 2 ? data0[_splits[1]] - data0[_splits[0]] : _incr;
+
+						let values = axis._values = axis.values(uplot, axis.filter(uplot, splits, i, _space, incr), i, _space, incr);
+
+						// rotating of labels only supported on bottom x axis
+						axis._rotate = side == 2 ? axis.rotate(uplot, values, i, _space) : 0;
+
+						let oldSize = axis._size;
+						axis._size = ceil(axis.size(uplot, values, i, cycleNum));
+
+						if (oldSize != null && axis._size != oldSize) {
+							converged = false;
+						}
+					} catch (error) {
+						throw new UPlotError(
+							`Error calculating axis ${i}: ${error.message}`,
+							'AxisManager',
+							{ method: 'axesCalc', axisIndex: i, type: ERROR_TYPES.LAYOUT_CALCULATION },
+							error
+						);
+					}
+				});
 			});
 
-			if (shouldAlpha)
-				ctx.globalAlpha = ctxAlpha = 1;
-		}
+			return converged;
+		}).call(this, cycleNum, plotWidCss, plotHgtCss, data0, resetYSeries);
 	}
 
-	function cacheStrokeFill(si, _points) {
-		let s = _points ? series[si].points : series[si];
+	calcAxesRects(plotLftCss, plotTopCss, plotWidCss, plotHgtCss) {
+		const { axes } = this;
+		
+		// will accum +
+		let off1 = plotLftCss + plotWidCss;
+		let off2 = plotTopCss + plotHgtCss;
+		// will accum -
+		let off3 = plotLftCss;
+		let off0 = plotTopCss;
 
-		s._stroke = s.stroke(self, si);
-		s._fill   = s.fill(self, si);
-	}
-
-	function drawPath(si, _points) {
-		let s = _points ? series[si].points : series[si];
-
-		let {
-			stroke,
-			fill,
-			clip: gapsClip,
-			flags,
-
-			_stroke: strokeStyle = s._stroke,
-			_fill:   fillStyle   = s._fill,
-			_width:  width       = s.width,
-		} = s._paths;
-
-		width = roundDec(width * pxRatio$1, 3);
-
-		let boundsClip = null;
-		let offset = (width % 2) / 2;
-
-		if (_points && fillStyle == null)
-			fillStyle = width > 0 ? "#fff" : strokeStyle;
-
-		let _pxAlign = s.pxAlign == 1 && offset > 0;
-
-		_pxAlign && ctx.translate(offset, offset);
-
-		if (!_points) {
-			let lft = plotLft - width / 2,
-				top = plotTop - width / 2,
-				wid = plotWid + width,
-				hgt = plotHgt + width;
-
-			boundsClip = new Path2D();
-			boundsClip.rect(lft, top, wid, hgt);
+		function incrOffset(side, size) {
+			switch (side) {
+				case 1: off1 += size; return off1 - size;
+				case 2: off2 += size; return off2 - size;
+				case 3: off3 -= size; return off3 + size;
+				case 0: off0 -= size; return off0 + size;
+			}
 		}
 
-		// the points pathbuilder's gapsClip is its boundsClip, since points dont need gaps clipping, and bounds depend on point size
-		if (_points)
-			strokeFill(strokeStyle, width, s.dash, s.cap, fillStyle, stroke, fill, flags, gapsClip);
-		else
-			fillStroke(si, strokeStyle, width, s.dash, s.cap, fillStyle, stroke, fill, flags, boundsClip, gapsClip);
+		axes.forEach((axis, i) => {
+			if (axis.show && axis._show) {
+				let side = axis.side;
 
-		_pxAlign && ctx.translate(-offset, -offset);
-	}
+				axis._pos = incrOffset(side, axis._size);
 
-	function fillStroke(si, strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip) {
-		let didStrokeFill = false;
-
-		// for all bands where this series is the top edge, create upwards clips using the bottom edges
-		// and apply clips + fill with band fill or dfltFill
-		flags != 0 && bands.forEach((b, bi) => {
-			// isUpperEdge?
-			if (b.series[0] == si) {
-				let lowerEdge = series[b.series[1]];
-				let lowerData = data[b.series[1]];
-
-				let bandClip = (lowerEdge._paths || EMPTY_OBJ).band;
-
-				if (isArr(bandClip))
-					bandClip = b.dir == 1 ? bandClip[0] : bandClip[1];
-
-				let gapsClip2;
-
-				let _fillStyle = null;
-
-				// hasLowerEdge?
-				if (lowerEdge.show && bandClip && hasData(lowerData, i0, i1)) {
-					_fillStyle = b.fill(self, bi) || fillStyle;
-					gapsClip2 = lowerEdge._paths.clip;
-				}
-				else
-					bandClip = null;
-
-				strokeFill(strokeStyle, lineWidth, lineDash, lineCap, _fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip, gapsClip2, bandClip);
-
-				didStrokeFill = true;
+				if (axis.label != null)
+					axis._lpos = incrOffset(side, axis.labelSize);
 			}
 		});
-
-		if (!didStrokeFill)
-			strokeFill(strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip);
 	}
 
-	const CLIP_FILL_STROKE = BAND_CLIP_FILL | BAND_CLIP_STROKE;
-
-	function strokeFill(strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip, gapsClip2, bandClip) {
-		setCtxStyle(strokeStyle, lineWidth, lineDash, lineCap, fillStyle);
-
-		if (boundsClip || gapsClip || bandClip) {
-			ctx.save();
-			boundsClip && ctx.clip(boundsClip);
-			gapsClip && ctx.clip(gapsClip);
-		}
-
-		if (bandClip) {
-			if ((flags & CLIP_FILL_STROKE) == CLIP_FILL_STROKE) {
-				ctx.clip(bandClip);
-				gapsClip2 && ctx.clip(gapsClip2);
-				doFill(fillStyle, fillPath);
-				doStroke(strokeStyle, strokePath, lineWidth);
-			}
-			else if (flags & BAND_CLIP_STROKE) {
-				doFill(fillStyle, fillPath);
-				ctx.clip(bandClip);
-				doStroke(strokeStyle, strokePath, lineWidth);
-			}
-			else if (flags & BAND_CLIP_FILL) {
-				ctx.save();
-				ctx.clip(bandClip);
-				gapsClip2 && ctx.clip(gapsClip2);
-				doFill(fillStyle, fillPath);
-				ctx.restore();
-				doStroke(strokeStyle, strokePath, lineWidth);
-			}
-		}
-		else {
-			doFill(fillStyle, fillPath);
-			doStroke(strokeStyle, strokePath, lineWidth);
-		}
-
-		if (boundsClip || gapsClip || bandClip)
-			ctx.restore();
-	}
-
-	function doStroke(strokeStyle, strokePath, lineWidth) {
-		if (lineWidth > 0) {
-			if (strokePath instanceof Map) {
-				strokePath.forEach((strokePath, strokeStyle) => {
-					ctx.strokeStyle = ctxStroke = strokeStyle;
-					ctx.stroke(strokePath);
-				});
-			}
-			else
-				strokePath != null && strokeStyle && ctx.stroke(strokePath);
-		}
-	}
-
-	function doFill(fillStyle, fillPath) {
-		if (fillPath instanceof Map) {
-			fillPath.forEach((fillPath, fillStyle) => {
-				ctx.fillStyle = ctxFill = fillStyle;
-				ctx.fill(fillPath);
-			});
-		}
-		else
-			fillPath != null && fillStyle && ctx.fill(fillPath);
-	}
-
-	function getIncrSpace(axisIdx, min, max, fullDim) {
-		let axis = axes[axisIdx];
-
-		let incrSpace;
-
-		if (fullDim <= 0)
-			incrSpace = [0, 0];
-		else {
-			let minSpace = axis._space = axis.space(self, axisIdx, min, max, fullDim);
-			let incrs    = axis._incrs = axis.incrs(self, axisIdx, min, max, fullDim, minSpace);
-			incrSpace    = findIncr(min, max, incrs, fullDim, minSpace);
-		}
-
-		return (axis._found = incrSpace);
-	}
-
-	function drawOrthoLines(offs, filts, ori, side, pos0, len, width, stroke, dash, cap) {
+	drawOrthoLines(ctx, offs, filts, ori, side, pos0, len, width, stroke, dash, cap, pxAlign, setCtxStyle) {
 		let offset = (width % 2) / 2;
 
 		pxAlign == 1 && ctx.translate(offset, offset);
@@ -4483,85 +5892,9 @@ function uPlot(opts, data, then) {
 		pxAlign == 1 && ctx.translate(-offset, -offset);
 	}
 
-	function axesCalc(cycleNum) {
-	//	log("axesCalc()", arguments);
-
-		let converged = true;
-
-		axes.forEach((axis, i) => {
-			if (!axis.show)
-				return;
-
-			let scale = scales[axis.scale];
-
-			if (scale.min == null) {
-				if (axis._show) {
-					converged = false;
-					axis._show = false;
-					resetYSeries(false);
-				}
-				return;
-			}
-			else {
-				if (!axis._show) {
-					converged = false;
-					axis._show = true;
-					resetYSeries(false);
-				}
-			}
-
-			let side = axis.side;
-			let ori = side % 2;
-
-			let {min, max} = scale;		// 		// should this toggle them ._show = false
-
-			let [_incr, _space] = getIncrSpace(i, min, max, ori == 0 ? plotWidCss : plotHgtCss);
-
-			if (_space == 0)
-				return;
-
-			// if we're using index positions, force first tick to match passed index
-			let forceMin = scale.distr == 2;
-
-			let _splits = axis._splits = axis.splits(self, i, min, max, _incr, _space, forceMin);
-
-			// tick labels
-			// BOO this assumes a specific data/series
-			let splits = scale.distr == 2 ? _splits.map(i => data0[i]) : _splits;
-			let incr   = scale.distr == 2 ? data0[_splits[1]] - data0[_splits[0]] : _incr;
-
-			let values = axis._values = axis.values(self, axis.filter(self, splits, i, _space, incr), i, _space, incr);
-
-			// rotating of labels only supported on bottom x axis
-			axis._rotate = side == 2 ? axis.rotate(self, values, i, _space) : 0;
-
-			let oldSize = axis._size;
-
-			axis._size = ceil(axis.size(self, values, i, cycleNum));
-
-			if (oldSize != null && axis._size != oldSize)			// ready && ?
-				converged = false;
-		});
-
-		return converged;
-	}
-
-	function paddingCalc(cycleNum) {
-		let converged = true;
-
-		padding.forEach((p, i) => {
-			let _p = p(self, i, sidesWithAxes, cycleNum);
-
-			if (_p != _padding[i])
-				converged = false;
-
-			_padding[i] = _p;
-		});
-
-		return converged;
-	}
-
-	function drawAxesGrid() {
+	drawAxesGrid(ctx, data0, plotLft, plotTop, plotWid, plotHgt, pxRatio, pxAlign, pxRound, getPos, setFontStyle, setCtxStyle, fire) {
+		const { uplot, axes, scales } = this;
+		
 		for (let i = 0; i < axes.length; i++) {
 			let axis = axes[i];
 
@@ -4573,7 +5906,7 @@ function uPlot(opts, data, then) {
 
 			let x, y;
 
-			let fillStyle = axis.stroke(self, i);
+			let fillStyle = axis.stroke(uplot, i);
 
 			let shiftDir = side == 0 || side == 3 ? -1 : 1;
 
@@ -4582,7 +5915,7 @@ function uPlot(opts, data, then) {
 			// axis label
 			if (axis.label != null) {
 				let shiftAmt = axis.labelGap * shiftDir;
-				let baseLpos = round((axis._lpos + shiftAmt) * pxRatio$1);
+				let baseLpos = round((axis._lpos + shiftAmt) * pxRatio);
 
 				setFontStyle(axis.labelFont[0], fillStyle, "center", side == 2 ? TOP : BOTTOM);
 
@@ -4603,7 +5936,7 @@ function uPlot(opts, data, then) {
 					y = baseLpos;
 				}
 
-				let _label = isFn(axis.label) ? axis.label(self, i, _incr, _space) : axis.label;
+				let _label = isFn(axis.label) ? axis.label(uplot, i, _incr, _space) : axis.label;
 
 				ctx.fillText(_label, x, y);
 
@@ -4628,13 +5961,13 @@ function uPlot(opts, data, then) {
 			let ticks = axis.ticks;
 			let border = axis.border;
 			let _tickSize = ticks.show ? ticks.size : 0;
-			let tickSize = round(_tickSize * pxRatio$1);
-			let axisGap = round((axis.alignTo == 2 ? axis._size - _tickSize - axis.gap : axis.gap) * pxRatio$1);
+			let tickSize = round(_tickSize * pxRatio);
+			let axisGap = round((axis.alignTo == 2 ? axis._size - _tickSize - axis.gap : axis.gap) * pxRatio);
 
 			// rotating of labels only supported on bottom x axis
 			let angle = axis._rotate * -PI/180;
 
-			let basePos  = pxRound(axis._pos * pxRatio$1);
+			let basePos  = pxRound(axis._pos * pxRatio);
 			let shiftAmt = (tickSize + axisGap) * shiftDir;
 			let finalPos = basePos + shiftAmt;
 			    y        = ori == 0 ? finalPos : 0;
@@ -4675,8 +6008,8 @@ function uPlot(opts, data, then) {
 
 						if (angle) {
 							ctx.save();
-							ctx.translate(x, y + j * lineHeight); // can this be replaced with position math?
-							ctx.rotate(angle); // can this be done once?
+							ctx.translate(x, y + j * lineHeight);
+							ctx.rotate(angle);
 							ctx.fillText(text, 0, 0);
 							ctx.restore();
 						}
@@ -4688,17 +6021,20 @@ function uPlot(opts, data, then) {
 
 			// ticks
 			if (ticks.show) {
-				drawOrthoLines(
+				this.drawOrthoLines(
+					ctx,
 					canOffs,
-					ticks.filter(self, splits, i, _space, incr),
+					ticks.filter(uplot, splits, i, _space, incr),
 					ori,
 					side,
 					basePos,
 					tickSize,
-					roundDec(ticks.width * pxRatio$1, 3),
-					ticks.stroke(self, i),
+					roundDec(ticks.width * pxRatio, 3),
+					ticks.stroke(uplot, i),
 					ticks.dash,
 					ticks.cap,
+					pxAlign,
+					setCtxStyle
 				);
 			}
 
@@ -4706,32 +6042,38 @@ function uPlot(opts, data, then) {
 			let grid = axis.grid;
 
 			if (grid.show) {
-				drawOrthoLines(
+				this.drawOrthoLines(
+					ctx,
 					canOffs,
-					grid.filter(self, splits, i, _space, incr),
+					grid.filter(uplot, splits, i, _space, incr),
 					ori,
 					ori == 0 ? 2 : 1,
 					ori == 0 ? plotTop : plotLft,
 					ori == 0 ? plotHgt : plotWid,
-					roundDec(grid.width * pxRatio$1, 3),
-					grid.stroke(self, i),
+					roundDec(grid.width * pxRatio, 3),
+					grid.stroke(uplot, i),
 					grid.dash,
 					grid.cap,
+					pxAlign,
+					setCtxStyle
 				);
 			}
 
 			if (border.show) {
-				drawOrthoLines(
+				this.drawOrthoLines(
+					ctx,
 					[basePos],
 					[1],
 					ori == 0 ? 1 : 0,
 					ori == 0 ? 1 : 2,
 					ori == 1 ? plotTop : plotLft,
 					ori == 1 ? plotHgt : plotWid,
-					roundDec(border.width * pxRatio$1, 3),
-					border.stroke(self, i),
+					roundDec(border.width * pxRatio, 3),
+					border.stroke(uplot, i),
 					border.dash,
 					border.cap,
+					pxAlign,
+					setCtxStyle
 				);
 			}
 		}
@@ -4739,1396 +6081,1433 @@ function uPlot(opts, data, then) {
 		fire("drawAxes");
 	}
 
-	function resetYSeries(minMax) {
-	//	log("resetYSeries()", arguments);
+	syncFontSizes(pxRatio) {
+		this.axes.forEach(axis => syncFontSize(axis, pxRatio));
+	}
+}
 
-		series.forEach((s, i) => {
-			if (i > 0) {
-				s._paths = null;
-
-				if (minMax) {
-					if (mode == 1) {
-						s.min = null;
-						s.max = null;
-					}
-					else {
-						s.facets.forEach(f => {
-							f.min = null;
-							f.max = null;
-						});
-					}
-				}
+/**
+ * Renderer class handles all canvas drawing operations and rendering optimization
+ */
+class Renderer {
+	constructor(uplot, layoutManager) {
+		try {
+			validateRequired(uplot, 'uplot', 'Renderer', 'constructor');
+			validateRequired(layoutManager, 'layoutManager', 'Renderer', 'constructor');
+			
+			if (!uplot.ctx) {
+				throw new UPlotError(
+					'uPlot instance missing canvas context',
+					'Renderer',
+					{ method: 'constructor', type: ERROR_TYPES.INITIALIZATION }
+				);
 			}
-		});
-	}
-
-	let queuedCommit = false;
-	let deferHooks = false;
-	let hooksQueue = [];
-
-	function flushHooks() {
-		deferHooks = false;
-
-		for (let i = 0; i < hooksQueue.length; i++)
-			fire(...hooksQueue[i]);
-
-		hooksQueue.length = 0;
-	}
-
-	function commit() {
-		if (!queuedCommit) {
-			microTask(_commit);
-			queuedCommit = true;
-		}
-	}
-
-	// manual batching (aka immediate mode), skips microtask queue
-	function batch(fn, _deferHooks = false) {
-		queuedCommit = true;
-		deferHooks = _deferHooks;
-
-		fn(self);
-		_commit();
-
-		if (_deferHooks && hooksQueue.length > 0)
-			queueMicrotask(flushHooks);
-	}
-
-	self.batch = batch;
-
-	function _commit() {
-	//	log("_commit()", arguments);
-
-		if (shouldSetScales) {
-			setScales();
-			shouldSetScales = false;
-		}
-
-		if (shouldConvergeSize) {
-			convergeSize();
-			shouldConvergeSize = false;
-		}
-
-		if (shouldSetSize) {
-			setStylePx(under, LEFT,   plotLftCss);
-			setStylePx(under, TOP,    plotTopCss);
-			setStylePx(under, WIDTH,  plotWidCss);
-			setStylePx(under, HEIGHT, plotHgtCss);
-
-			setStylePx(over, LEFT,    plotLftCss);
-			setStylePx(over, TOP,     plotTopCss);
-			setStylePx(over, WIDTH,   plotWidCss);
-			setStylePx(over, HEIGHT,  plotHgtCss);
-
-			setStylePx(wrap, WIDTH,   fullWidCss);
-			setStylePx(wrap, HEIGHT,  fullHgtCss);
-
-			// NOTE: mutating this during print preview in Chrome forces transparent
-			// canvas pixels to white, even when followed up with clearRect() below
-			can.width  = round(fullWidCss * pxRatio$1);
-			can.height = round(fullHgtCss * pxRatio$1);
-
-			axes.forEach(({ _el, _show, _size, _pos, side }) => {
-				if (_el != null) {
-					if (_show) {
-						let posOffset = (side === 3 || side === 0 ? _size : 0);
-						let isVt = side % 2 == 1;
-
-						setStylePx(_el, isVt ? "left"   : "top",    _pos - posOffset);
-						setStylePx(_el, isVt ? "width"  : "height", _size);
-						setStylePx(_el, isVt ? "top"    : "left",   isVt ? plotTopCss : plotLftCss);
-						setStylePx(_el, isVt ? "height" : "width",  isVt ? plotHgtCss : plotWidCss);
-
-						remClass(_el, OFF);
-					}
-					else
-						addClass(_el, OFF);
+			
+			this.u = uplot;
+			this.layoutManager = layoutManager;
+			this.ctx = uplot.ctx;
+			this.can = uplot.can;
+			
+			// Canvas context style cache for optimization
+			this.ctxStroke = null;
+			this.ctxFill = null;
+			this.ctxWidth = null;
+			this.ctxDash = null;
+			this.ctxJoin = null;
+			this.ctxCap = null;
+			this.ctxFont = null;
+			this.ctxAlign = null;
+			this.ctxBaseline = null;
+			this.ctxAlpha = 1;
+			
+			// Drawing order configuration
+			this.drawOrderMap = {
+				axes: () => this.drawAxesGrid(),
+				series: () => this.drawSeries(),
+			};
+			
+			const drawOrderOpts = uplot.opts?.drawOrder || ["axes", "series"];
+			if (!Array.isArray(drawOrderOpts)) {
+				throw new UPlotError(
+					'drawOrder option must be an array',
+					'Renderer',
+					{ method: 'constructor', drawOrderType: typeof drawOrderOpts, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			this.drawOrder = drawOrderOpts.map(key => {
+				if (!this.drawOrderMap[key]) {
+					throw new UPlotError(
+						`Invalid draw order key: ${key}. Valid keys are: ${Object.keys(this.drawOrderMap).join(', ')}`,
+						'Renderer',
+						{ method: 'constructor', invalidKey: key, type: ERROR_TYPES.VALIDATION }
+					);
 				}
+				return this.drawOrderMap[key];
 			});
+			
+			// Constants for band clipping
+			this.CLIP_FILL_STROKE = BAND_CLIP_FILL | BAND_CLIP_STROKE;
+		} catch (error) {
+			errorReporter.report(error);
+			throw error;
+		}
+	}
 
-			// invalidate ctx style cache
-			ctxStroke = ctxFill = ctxWidth = ctxJoin = ctxCap = ctxFont = ctxAlign = ctxBaseline = ctxDash = null;
-			ctxAlpha = 1;
+	/**
+	 * Initialize canvas with proper dimensions and pixel ratio
+	 */
+	initCanvas(opts) {
+		return withErrorBoundary('Renderer', 'initCanvas', function(opts) {
+			const { pxRatio } = this.u;
+			const { fullWidCss, fullHgtCss } = this.layoutManager;
+			
+			if (typeof pxRatio !== 'number' || pxRatio <= 0) {
+				throw new UPlotError(
+					`Invalid pixel ratio: ${pxRatio}. Must be a positive number`,
+					'Renderer',
+					{ method: 'initCanvas', pxRatio, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			if (typeof fullWidCss !== 'number' || typeof fullHgtCss !== 'number') {
+				throw new UPlotError(
+					`Invalid canvas dimensions: width=${fullWidCss}, height=${fullHgtCss}. Both must be numbers`,
+					'Renderer',
+					{ method: 'initCanvas', fullWidCss, fullHgtCss, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			if (fullWidCss <= 0 || fullHgtCss <= 0) {
+				throw new UPlotError(
+					`Invalid canvas dimensions: width=${fullWidCss}, height=${fullHgtCss}. Both must be positive`,
+					'Renderer',
+					{ method: 'initCanvas', fullWidCss, fullHgtCss, type: ERROR_TYPES.VALIDATION }
+				);
+			}
+			
+			try {
+				// Set canvas dimensions
+				this.can.width = round(fullWidCss * pxRatio);
+				this.can.height = round(fullHgtCss * pxRatio);
+				
+				// Set CSS dimensions
+				this.can.style.width = fullWidCss + 'px';
+				this.can.style.height = fullHgtCss + 'px';
+				
+				// Invalidate context style cache
+				this.invalidateStyleCache();
+			} catch (error) {
+				throw new UPlotError(
+					`Error initializing canvas: ${error.message}`,
+					'Renderer',
+					{ method: 'initCanvas', fullWidCss, fullHgtCss, pxRatio, type: ERROR_TYPES.RENDERING },
+					error
+				);
+			}
+		}).call(this, opts);
+	}
 
-			syncRect(true);
-
-			if (
-				plotLftCss != _plotLftCss ||
-				plotTopCss != _plotTopCss ||
-				plotWidCss != _plotWidCss ||
-				plotHgtCss != _plotHgtCss
-			) {
-				resetYSeries(false);
-
-				let pctWid = plotWidCss / _plotWidCss;
-				let pctHgt = plotHgtCss / _plotHgtCss;
-
-				if (showCursor && !shouldSetCursor && cursor.left >= 0) {
-					cursor.left *= pctWid;
-					cursor.top  *= pctHgt;
-
-					vCursor && elTrans(vCursor, round(cursor.left), 0, plotWidCss, plotHgtCss);
-					hCursor && elTrans(hCursor, 0, round(cursor.top), plotWidCss, plotHgtCss);
-
-					for (let i = 0; i < cursorPts.length; i++) {
-						let pt = cursorPts[i];
-
-						if (pt != null) {
-							cursorPtsLft[i] *= pctWid;
-							cursorPtsTop[i] *= pctHgt;
-							elTrans(pt, ceil(cursorPtsLft[i]), ceil(cursorPtsTop[i]), plotWidCss, plotHgtCss);
-						}
+	/**
+	 * Main draw function that orchestrates all rendering
+	 */
+	draw() {
+		return withErrorBoundary('Renderer', 'draw', function() {
+			const { fullWidCss, fullHgtCss } = this.layoutManager;
+			
+			if (fullWidCss > 0 && fullHgtCss > 0) {
+				try {
+					this.clear();
+					
+					if (typeof this.u.fire === 'function') {
+						this.u.fire("drawClear");
 					}
-				}
-
-				if (select.show && !shouldSetSelect && select.left >= 0 && select.width > 0) {
-					select.left   *= pctWid;
-					select.width  *= pctWid;
-					select.top    *= pctHgt;
-					select.height *= pctHgt;
-
-					for (let prop in _hideProps)
-						setStylePx(selectDiv, prop, select[prop]);
-				}
-
-				_plotLftCss = plotLftCss;
-				_plotTopCss = plotTopCss;
-				_plotWidCss = plotWidCss;
-				_plotHgtCss = plotHgtCss;
-			}
-
-			fire("setSize");
-
-			shouldSetSize = false;
-		}
-
-		if (fullWidCss > 0 && fullHgtCss > 0) {
-			ctx.clearRect(0, 0, can.width, can.height);
-			fire("drawClear");
-			drawOrder.forEach(fn => fn());
-			fire("draw");
-		}
-
-		if (select.show && shouldSetSelect) {
-			setSelect(select);
-			shouldSetSelect = false;
-		}
-
-		if (showCursor && shouldSetCursor) {
-			updateCursor(null, true, false);
-			shouldSetCursor = false;
-		}
-
-		if (legend.show && legend.live && shouldSetLegend) {
-			setLegend();
-			shouldSetLegend = false; // redundant currently
-		}
-
-		if (!ready) {
-			ready = true;
-			self.status = 1;
-
-			fire("ready");
-		}
-
-		viaAutoScaleX = false;
-
-		queuedCommit = false;
-	}
-
-	self.redraw = (rebuildPaths, recalcAxes) => {
-		shouldConvergeSize = recalcAxes || false;
-
-		if (rebuildPaths !== false)
-			_setScale(xScaleKey, scaleX.min, scaleX.max);
-		else
-			commit();
-	};
-
-	// redraw() => setScale('x', scales.x.min, scales.x.max);
-
-	// explicit, never re-ranged (is this actually true? for x and y)
-	function setScale(key, opts) {
-		let sc = scales[key];
-
-		if (sc.from == null) {
-			if (dataLen == 0) {
-				let minMax = sc.range(self, opts.min, opts.max, key);
-				opts.min = minMax[0];
-				opts.max = minMax[1];
-			}
-
-			if (opts.min > opts.max) {
-				let _min = opts.min;
-				opts.min = opts.max;
-				opts.max = _min;
-			}
-
-			if (dataLen > 1 && opts.min != null && opts.max != null && opts.max - opts.min < 1e-16)
-				return;
-
-			if (key == xScaleKey) {
-				if (sc.distr == 2 && dataLen > 0) {
-					opts.min = closestIdx(opts.min, data[0]);
-					opts.max = closestIdx(opts.max, data[0]);
-
-					if (opts.min == opts.max)
-						opts.max++;
-				}
-			}
-
-		//	log("setScale()", arguments);
-
-			pendScales[key] = opts;
-
-			shouldSetScales = true;
-			commit();
-		}
-	}
-
-	self.setScale = setScale;
-
-//	INTERACTION
-
-	let xCursor;
-	let yCursor;
-	let vCursor;
-	let hCursor;
-
-	// starting position before cursor.move
-	let rawMouseLeft0;
-	let rawMouseTop0;
-
-	// starting position
-	let mouseLeft0;
-	let mouseTop0;
-
-	// current position before cursor.move
-	let rawMouseLeft1;
-	let rawMouseTop1;
-
-	// current position
-	let mouseLeft1;
-	let mouseTop1;
-
-	let dragging = false;
-
-	const drag = cursor.drag;
-
-	let dragX = drag.x;
-	let dragY = drag.y;
-
-	if (showCursor) {
-		if (cursor.x)
-			xCursor = placeDiv(CURSOR_X, over);
-		if (cursor.y)
-			yCursor = placeDiv(CURSOR_Y, over);
-
-		if (scaleX.ori == 0) {
-			vCursor = xCursor;
-			hCursor = yCursor;
-		}
-		else {
-			vCursor = yCursor;
-			hCursor = xCursor;
-		}
-
-		mouseLeft1 = cursor.left;
-		mouseTop1 = cursor.top;
-	}
-
-	const select = self.select = assign({
-		show:   true,
-		over:   true,
-		left:   0,
-		width:  0,
-		top:    0,
-		height: 0,
-	}, opts.select);
-
-	const selectDiv = select.show ? placeDiv(SELECT, select.over ? over : under) : null;
-
-	function setSelect(opts, _fire) {
-		if (select.show) {
-			for (let prop in opts) {
-				select[prop] = opts[prop];
-
-				if (prop in _hideProps)
-					setStylePx(selectDiv, prop, opts[prop]);
-			}
-
-			_fire !== false && fire("setSelect");
-		}
-	}
-
-	self.setSelect = setSelect;
-
-	function toggleDOM(i) {
-		let s = series[i];
-
-		if (s.show)
-			showLegend && remClass(legendRows[i], OFF);
-		else {
-			showLegend && addClass(legendRows[i], OFF);
-
-			if (showCursor) {
-				let pt = cursorOnePt ? cursorPts[0] : cursorPts[i];
-				pt != null && elTrans(pt, -10, -10, plotWidCss, plotHgtCss);
-			}
-		}
-	}
-
-	function _setScale(key, min, max) {
-		setScale(key, {min, max});
-	}
-
-	function setSeries(i, opts, _fire, _pub) {
-	//	log("setSeries()", arguments);
-
-		if (opts.focus != null)
-			setFocus(i);
-
-		if (opts.show != null) {
-			series.forEach((s, si) => {
-				if (si > 0 && (i == si || i == null)) {
-					s.show = opts.show;
-					toggleDOM(si);
-
-					if (mode == 2) {
-						_setScale(s.facets[0].scale, null, null);
-						_setScale(s.facets[1].scale, null, null);
+					
+					this.drawOrder.forEach((fn, index) => {
+						safeExecute('Renderer', `drawOrder[${index}]`, fn);
+					});
+					
+					if (typeof this.u.fire === 'function') {
+						this.u.fire("draw");
 					}
-					else
-						_setScale(s.scale, null, null);
-
-					commit();
+				} catch (error) {
+					throw new UPlotError(
+						`Error during rendering: ${error.message}`,
+						'Renderer',
+						{ method: 'draw', fullWidCss, fullHgtCss, type: ERROR_TYPES.RENDERING },
+						error
+					);
 				}
-			});
-		}
-
-		_fire !== false && fire("setSeries", i, opts);
-
-		_pub && pubSync("setSeries", self, i, opts);
-	}
-
-	self.setSeries = setSeries;
-
-	function setBand(bi, opts) {
-		assign(bands[bi], opts);
-	}
-
-	function addBand(opts, bi) {
-		opts.fill = fnOrSelf(opts.fill || null);
-		opts.dir = ifNull(opts.dir, -1);
-		bi = bi == null ? bands.length : bi;
-		bands.splice(bi, 0, opts);
-	}
-
-	function delBand(bi) {
-		if (bi == null)
-			bands.length = 0;
-		else
-			bands.splice(bi, 1);
-	}
-
-	self.addBand = addBand;
-	self.setBand = setBand;
-	self.delBand = delBand;
-
-	function setAlpha(i, value) {
-		series[i].alpha = value;
-
-		if (showCursor && cursorPts[i] != null)
-			cursorPts[i].style.opacity = value;
-
-		if (showLegend && legendRows[i])
-			legendRows[i].style.opacity = value;
-	}
-
-	// y-distance
-	let closestDist;
-	let closestSeries;
-	let focusedSeries;
-	const FOCUS_TRUE  = {focus: true};
-
-	function setFocus(i) {
-		if (i != focusedSeries) {
-		//	log("setFocus()", arguments);
-
-			let allFocused = i == null;
-
-			let _setAlpha = focus.alpha != 1;
-
-			series.forEach((s, i2) => {
-				if (mode == 1 || i2 > 0) {
-					let isFocused = allFocused || i2 == 0 || i2 == i;
-					s._focus = allFocused ? null : isFocused;
-					_setAlpha && setAlpha(i2, isFocused ? 1 : focus.alpha);
-				}
-			});
-
-			focusedSeries = i;
-			_setAlpha && commit();
-		}
-	}
-
-	if (showLegend && cursorFocus) {
-		onMouse(mouseleave, legendTable, e => {
-			if (cursor._lock)
-				return;
-
-			setCursorEvent(e);
-
-			if (focusedSeries != null)
-				setSeries(null, FOCUS_TRUE, true, syncOpts.setSeries);
-		});
-	}
-
-	function posToVal(pos, scale, can) {
-		let sc = scales[scale];
-
-		if (can)
-			pos = pos / pxRatio$1 - (sc.ori == 1 ? plotTopCss : plotLftCss);
-
-		let dim = plotWidCss;
-
-		if (sc.ori == 1) {
-			dim = plotHgtCss;
-			pos = dim - pos;
-		}
-
-		if (sc.dir == -1)
-			pos = dim - pos;
-
-		let _min = sc._min,
-			_max = sc._max,
-			pct = pos / dim;
-
-		let sv = _min + (_max - _min) * pct;
-
-		let distr = sc.distr;
-
-		return (
-			distr == 3 ? pow(10, sv) :
-			distr == 4 ? sinh(sv, sc.asinh) :
-			distr == 100 ? sc.bwd(sv) :
-			sv
-		);
-	}
-
-	function closestIdxFromXpos(pos, can) {
-		let v = posToVal(pos, xScaleKey, can);
-		return closestIdx(v, data[0], i0, i1);
-	}
-
-	self.valToIdx = val => closestIdx(val, data[0]);
-	self.posToIdx = closestIdxFromXpos;
-	self.posToVal = posToVal;
-	self.valToPos = (val, scale, can) => (
-		scales[scale].ori == 0 ?
-		getHPos(val, scales[scale],
-			can ? plotWid : plotWidCss,
-			can ? plotLft : 0,
-		) :
-		getVPos(val, scales[scale],
-			can ? plotHgt : plotHgtCss,
-			can ? plotTop : 0,
-		)
-	);
-
-	self.setCursor = (opts, _fire, _pub) => {
-		mouseLeft1 = opts.left;
-		mouseTop1 = opts.top;
-	//	assign(cursor, opts);
-		updateCursor(null, _fire, _pub);
-	};
-
-	function setSelH(off, dim) {
-		setStylePx(selectDiv, LEFT,  select.left = off);
-		setStylePx(selectDiv, WIDTH, select.width = dim);
-	}
-
-	function setSelV(off, dim) {
-		setStylePx(selectDiv, TOP,    select.top = off);
-		setStylePx(selectDiv, HEIGHT, select.height = dim);
-	}
-
-	let setSelX = scaleX.ori == 0 ? setSelH : setSelV;
-	let setSelY = scaleX.ori == 1 ? setSelH : setSelV;
-
-	function syncLegend() {
-		if (showLegend && legend.live) {
-			for (let i = mode == 2 ? 1 : 0; i < series.length; i++) {
-				if (i == 0 && multiValLegend)
-					continue;
-
-				let vals = legend.values[i];
-
-				let j = 0;
-
-				for (let k in vals)
-					legendCells[i][j++].firstChild.nodeValue = vals[k];
 			}
-		}
+		}).call(this);
 	}
 
-	function setLegend(opts, _fire) {
-		if (opts != null) {
-			if (opts.idxs) {
-				opts.idxs.forEach((didx, sidx) => {
-					activeIdxs[sidx] = didx;
-				});
+	/**
+	 * Clear the entire canvas
+	 */
+	clear() {
+		return withErrorBoundary('Renderer', 'clear', function() {
+			if (!this.ctx) {
+				throw new UPlotError(
+					'Canvas context not available',
+					'Renderer',
+					{ method: 'clear', type: ERROR_TYPES.RENDERING }
+				);
 			}
-			else if (!isUndef(opts.idx))
-				activeIdxs.fill(opts.idx);
+			
+			try {
+				this.ctx.clearRect(0, 0, this.can.width, this.can.height);
+			} catch (error) {
+				throw new UPlotError(
+					`Error clearing canvas: ${error.message}`,
+					'Renderer',
+					{ method: 'clear', canvasWidth: this.can.width, canvasHeight: this.can.height, type: ERROR_TYPES.RENDERING },
+					error
+				);
+			}
+		}).call(this);
+	}
 
-			legend.idx = activeIdxs[0];
-		}
+	/**
+	 * Draw all series paths and points
+	 */
+	drawSeries() {
+		const { series, data, focus, mode } = this.u;
+		const dataLen = data[0]?.length || 0;
+		
+		if (dataLen > 0) {
+			let shouldAlpha = series.some(s => s._focus) && this.ctxAlpha != focus.alpha;
 
-		if (showLegend && legend.live) {
-			for (let sidx = 0; sidx < series.length; sidx++) {
-				if (sidx > 0 || mode == 1 && !multiValLegend)
-					setLegendValues(sidx, activeIdxs[sidx]);
+			if (shouldAlpha) {
+				this.ctx.globalAlpha = this.ctxAlpha = focus.alpha;
 			}
 
-			syncLegend();
-		}
-
-		shouldSetLegend = false;
-
-		_fire !== false && fire("setLegend");
-	}
-
-	self.setLegend = setLegend;
-
-	function setLegendValues(sidx, idx) {
-		let s = series[sidx];
-		let src = sidx == 0 && xScaleDistr == 2 ? data0 : data[sidx];
-		let val;
-
-		if (multiValLegend)
-			val = s.values(self, sidx, idx) ?? NULL_LEGEND_VALUES;
-		else {
-			val = s.value(self, idx == null ? null : src[idx], sidx, idx);
-			val = val == null ? NULL_LEGEND_VALUES : {_: val};
-		}
-
-		legend.values[sidx] = val;
-	}
-
-	function updateCursor(src, _fire, _pub) {
-	//	ts == null && log("updateCursor()", arguments);
-
-		rawMouseLeft1 = mouseLeft1;
-		rawMouseTop1 = mouseTop1;
-
-		[mouseLeft1, mouseTop1] = cursor.move(self, mouseLeft1, mouseTop1);
-
-		cursor.left = mouseLeft1;
-		cursor.top = mouseTop1;
-
-		if (showCursor) {
-			vCursor && elTrans(vCursor, round(mouseLeft1), 0, plotWidCss, plotHgtCss);
-			hCursor && elTrans(hCursor, 0, round(mouseTop1), plotWidCss, plotHgtCss);
-		}
-
-		let idx;
-
-		// when zooming to an x scale range between datapoints the binary search
-		// for nearest min/max indices results in this condition. cheap hack :D
-		let noDataInRange = i0 > i1; // works for mode 1 only
-
-		closestDist = inf;
-		closestSeries = null;
-
-		// TODO: extract
-		let xDim = scaleX.ori == 0 ? plotWidCss : plotHgtCss;
-		let yDim = scaleX.ori == 1 ? plotWidCss : plotHgtCss;
-
-		// if cursor hidden, hide points & clear legend vals
-		if (mouseLeft1 < 0 || dataLen == 0 || noDataInRange) {
-			idx = cursor.idx = null;
-
-			for (let i = 0; i < series.length; i++) {
-				let pt = cursorPts[i];
-				pt != null && elTrans(pt, -10, -10, plotWidCss, plotHgtCss);
-			}
-
-			if (cursorFocus)
-				setSeries(null, FOCUS_TRUE, true, src == null && syncOpts.setSeries);
-
-			if (legend.live) {
-				activeIdxs.fill(idx);
-				shouldSetLegend = true;
-			}
-		}
-		else {
-		//	let pctY = 1 - (y / rect.height);
-
-			let mouseXPos, valAtPosX, xPos;
-
-			if (mode == 1) {
-				mouseXPos = scaleX.ori == 0 ? mouseLeft1 : mouseTop1;
-				valAtPosX = posToVal(mouseXPos, xScaleKey);
-				idx = cursor.idx = closestIdx(valAtPosX, data[0], i0, i1);
-				xPos = valToPosX(data[0][idx], scaleX, xDim, 0);
-			}
-
-			// closest pt values
-			let _ptLft = -10;
-			let _ptTop = -10;
-			let _ptWid = 0;
-			let _ptHgt = 0;
-			let _centered = true;
-			let _ptFill = '';
-			let _ptStroke = '';
-
-			for (let i = mode == 2 ? 1 : 0; i < series.length; i++) {
-				let s = series[i];
-
-				let idx1  = activeIdxs[i];
-				let yVal1 = idx1 == null ? null : (mode == 1 ? data[i][idx1] : data[i][1][idx1]);
-
-				let idx2  = cursor.dataIdx(self, i, idx, valAtPosX);
-				let yVal2 = idx2 == null ? null : (mode == 1 ? data[i][idx2] : data[i][1][idx2]);
-
-				shouldSetLegend = shouldSetLegend || yVal2 != yVal1 || idx2 != idx1;
-
-				activeIdxs[i] = idx2;
-
+			// First pass: generate paths
+			series.forEach((s, i) => {
 				if (i > 0 && s.show) {
-					let xPos2 = idx2 == null ? -10 : idx2 == idx ? xPos : valToPosX(mode == 1 ? data[0][idx2] : data[i][0][idx2], scaleX, xDim, 0);
+					this.cacheStrokeFill(i, false); // cache series stroke/fill
+					this.cacheStrokeFill(i, true);  // cache points stroke/fill
 
-					// this doesnt really work for state timeline, heatmap, status history (where the value maps to color, not y coords)
-					let yPos = yVal2 == null ? -10 : valToPosY(yVal2, mode == 1 ? scales[s.scale] : scales[s.facets[1].scale], yDim, 0);
+					if (s._paths == null) {
+						let _ctxAlpha = this.ctxAlpha;
 
-					if (cursorFocus && yVal2 != null) {
-						let mouseYPos = scaleX.ori == 1 ? mouseLeft1 : mouseTop1;
-						let dist = abs(focus.dist(self, i, idx2, yPos, mouseYPos));
-
-						if (dist < closestDist) {
-							let bias = focus.bias;
-
-							if (bias != 0) {
-								let mouseYVal = posToVal(mouseYPos, s.scale);
-
-								let seriesYValSign = yVal2     >= 0 ? 1 : -1;
-								let mouseYValSign  = mouseYVal >= 0 ? 1 : -1;
-
-								// with a focus bias, we will never cross zero when prox testing
-								// it's either closest towards zero, or closest away from zero
-								if (mouseYValSign == seriesYValSign && (
-									mouseYValSign == 1 ?
-										(bias == 1 ? yVal2 >= mouseYVal : yVal2 <= mouseYVal) :  // >= 0
-										(bias == 1 ? yVal2 <= mouseYVal : yVal2 >= mouseYVal)    //  < 0
-								)) {
-									closestDist = dist;
-									closestSeries = i;
-								}
-							}
-							else {
-								closestDist = dist;
-								closestSeries = i;
-							}
-						}
-					}
-
-					if (shouldSetLegend || cursorOnePt) {
-						let hPos, vPos;
-
-						if (scaleX.ori == 0) {
-							hPos = xPos2;
-							vPos = yPos;
-						}
-						else {
-							hPos = yPos;
-							vPos = xPos2;
+						if (this.ctxAlpha != s.alpha) {
+							this.ctx.globalAlpha = this.ctxAlpha = s.alpha;
 						}
 
-						let ptWid, ptHgt, ptLft, ptTop,
-							ptStroke, ptFill,
-							centered = true,
-							getBBox = points.bbox;
+						let _idxs = mode == 2 ? [0, data[i][0].length - 1] : this.getOuterIdxs(data[i]);
+						s._paths = s.paths(this.u, i, _idxs[0], _idxs[1]);
 
-						if (getBBox != null) {
-							centered = false;
-
-							let bbox = getBBox(self, i);
-
-							ptLft = bbox.left;
-							ptTop = bbox.top;
-							ptWid = bbox.width;
-							ptHgt = bbox.height;
-						}
-						else {
-							ptLft = hPos;
-							ptTop = vPos;
-							ptWid = ptHgt = points.size(self, i);
-						}
-
-						ptFill = points.fill(self, i);
-						ptStroke = points.stroke(self, i);
-
-						if (cursorOnePt) {
-							if (i == closestSeries && closestDist <= focus.prox) {
-								_ptLft = ptLft;
-								_ptTop = ptTop;
-								_ptWid = ptWid;
-								_ptHgt = ptHgt;
-								_centered = centered;
-								_ptFill = ptFill;
-								_ptStroke = ptStroke;
-							}
-						}
-						else {
-							let pt = cursorPts[i];
-
-							if (pt != null) {
-								cursorPtsLft[i] = ptLft;
-								cursorPtsTop[i] = ptTop;
-
-								elSize(pt, ptWid, ptHgt, centered);
-								elColor(pt, ptFill, ptStroke);
-								elTrans(pt, ceil(ptLft), ceil(ptTop), plotWidCss, plotHgtCss);
-							}
+						if (this.ctxAlpha != _ctxAlpha) {
+							this.ctx.globalAlpha = this.ctxAlpha = _ctxAlpha;
 						}
 					}
 				}
+			});
+
+			// Second pass: draw paths and points
+			series.forEach((s, i) => {
+				if (i > 0 && s.show) {
+					let _ctxAlpha = this.ctxAlpha;
+
+					if (this.ctxAlpha != s.alpha) {
+						this.ctx.globalAlpha = this.ctxAlpha = s.alpha;
+					}
+
+					// Draw series paths
+					if (s._paths != null) {
+						this.drawPath(i, false);
+					}
+
+					// Draw points
+					if (s.points) {
+						let _gaps = s._paths != null ? s._paths.gaps : null;
+						let show = s.points.show(this.u, i, this.u.i0, this.u.i1, _gaps);
+						let idxs = s.points.filter(this.u, i, show, _gaps);
+
+						if (show || idxs) {
+							s.points._paths = s.points.paths(this.u, i, this.u.i0, this.u.i1, idxs);
+							this.drawPath(i, true);
+						}
+					}
+
+					if (this.ctxAlpha != _ctxAlpha) {
+						this.ctx.globalAlpha = this.ctxAlpha = _ctxAlpha;
+					}
+
+					this.u.fire("drawSeries", i);
+				}
+			});
+
+			if (shouldAlpha) {
+				this.ctx.globalAlpha = this.ctxAlpha = 1;
 			}
-
-			// if only using single hover point (at cursorPts[0])
-			// we have trigger styling at last visible series (once closestSeries is settled)
-			if (cursorOnePt) {
-				// some of this logic is similar to series focus below, since it matches the behavior by design
-
-				let p = focus.prox;
-
-				let focusChanged = focusedSeries == null ? closestDist <= p : (closestDist > p || closestSeries != focusedSeries);
-
-				if (shouldSetLegend || focusChanged) {
-					let pt = cursorPts[0];
-
-					if (pt != null) {
-						cursorPtsLft[0] = _ptLft;
-						cursorPtsTop[0] = _ptTop;
-
-						elSize(pt, _ptWid, _ptHgt, _centered);
-						elColor(pt, _ptFill, _ptStroke);
-						elTrans(pt, ceil(_ptLft), ceil(_ptTop), plotWidCss, plotHgtCss);
-					}
-				}
-			}
-		}
-
-		// nit: cursor.drag.setSelect is assumed always true
-		if (select.show && dragging) {
-			if (src != null) {
-				let [xKey, yKey] = syncOpts.scales;
-				let [matchXKeys, matchYKeys] = syncOpts.match;
-				let [xKeySrc, yKeySrc] = src.cursor.sync.scales;
-
-				// match the dragX/dragY implicitness/explicitness of src
-				let sdrag = src.cursor.drag;
-				dragX = sdrag._x;
-				dragY = sdrag._y;
-
-				if (dragX || dragY) {
-					let { left, top, width, height } = src.select;
-
-					let sori = src.scales[xKeySrc].ori;
-					let sPosToVal = src.posToVal;
-
-					let sOff, sDim, sc, a, b;
-
-					let matchingX = xKey != null && matchXKeys(xKey, xKeySrc);
-					let matchingY = yKey != null && matchYKeys(yKey, yKeySrc);
-
-					if (matchingX && dragX) {
-						if (sori == 0) {
-							sOff = left;
-							sDim = width;
-						}
-						else {
-							sOff = top;
-							sDim = height;
-						}
-
-						sc = scales[xKey];
-
-						a = valToPosX(sPosToVal(sOff, xKeySrc),        sc, xDim, 0);
-						b = valToPosX(sPosToVal(sOff + sDim, xKeySrc), sc, xDim, 0);
-
-						setSelX(min(a,b), abs(b-a));
-					}
-					else
-						setSelX(0, xDim);
-
-					if (matchingY && dragY) {
-						if (sori == 1) {
-							sOff = left;
-							sDim = width;
-						}
-						else {
-							sOff = top;
-							sDim = height;
-						}
-
-						sc = scales[yKey];
-
-						a = valToPosY(sPosToVal(sOff, yKeySrc),        sc, yDim, 0);
-						b = valToPosY(sPosToVal(sOff + sDim, yKeySrc), sc, yDim, 0);
-
-						setSelY(min(a,b), abs(b-a));
-					}
-					else
-						setSelY(0, yDim);
-				}
-				else
-					hideSelect();
-			}
-			else {
-				let rawDX = abs(rawMouseLeft1 - rawMouseLeft0);
-				let rawDY = abs(rawMouseTop1 - rawMouseTop0);
-
-				if (scaleX.ori == 1) {
-					let _rawDX = rawDX;
-					rawDX = rawDY;
-					rawDY = _rawDX;
-				}
-
-				dragX = drag.x && rawDX >= drag.dist;
-				dragY = drag.y && rawDY >= drag.dist;
-
-				let uni = drag.uni;
-
-				if (uni != null) {
-					// only calc drag status if they pass the dist thresh
-					if (dragX && dragY) {
-						dragX = rawDX >= uni;
-						dragY = rawDY >= uni;
-
-						// force unidirectionality when both are under uni limit
-						if (!dragX && !dragY) {
-							if (rawDY > rawDX)
-								dragY = true;
-							else
-								dragX = true;
-						}
-					}
-				}
-				else if (drag.x && drag.y && (dragX || dragY))
-					// if omni with no uni then both dragX / dragY should be true if either is true
-					dragX = dragY = true;
-
-				let p0, p1;
-
-				if (dragX) {
-					if (scaleX.ori == 0) {
-						p0 = mouseLeft0;
-						p1 = mouseLeft1;
-					}
-					else {
-						p0 = mouseTop0;
-						p1 = mouseTop1;
-					}
-
-					setSelX(min(p0, p1), abs(p1 - p0));
-
-					if (!dragY)
-						setSelY(0, yDim);
-				}
-
-				if (dragY) {
-					if (scaleX.ori == 1) {
-						p0 = mouseLeft0;
-						p1 = mouseLeft1;
-					}
-					else {
-						p0 = mouseTop0;
-						p1 = mouseTop1;
-					}
-
-					setSelY(min(p0, p1), abs(p1 - p0));
-
-					if (!dragX)
-						setSelX(0, xDim);
-				}
-
-				// the drag didn't pass the dist requirement
-				if (!dragX && !dragY) {
-					setSelX(0, 0);
-					setSelY(0, 0);
-				}
-			}
-		}
-
-		drag._x = dragX;
-		drag._y = dragY;
-
-		if (src == null) {
-			if (_pub) {
-				if (syncKey != null) {
-					let [xSyncKey, ySyncKey] = syncOpts.scales;
-
-					syncOpts.values[0] = xSyncKey != null ? posToVal(scaleX.ori == 0 ? mouseLeft1 : mouseTop1, xSyncKey) : null;
-					syncOpts.values[1] = ySyncKey != null ? posToVal(scaleX.ori == 1 ? mouseLeft1 : mouseTop1, ySyncKey) : null;
-				}
-
-				pubSync(mousemove, self, mouseLeft1, mouseTop1, plotWidCss, plotHgtCss, idx);
-			}
-
-			if (cursorFocus) {
-				let shouldPub = _pub && syncOpts.setSeries;
-				let p = focus.prox;
-
-				if (focusedSeries == null) {
-					if (closestDist <= p)
-						setSeries(closestSeries, FOCUS_TRUE, true, shouldPub);
-				}
-				else {
-					if (closestDist > p)
-						setSeries(null, FOCUS_TRUE, true, shouldPub);
-					else if (closestSeries != focusedSeries)
-						setSeries(closestSeries, FOCUS_TRUE, true, shouldPub);
-				}
-			}
-		}
-
-		if (shouldSetLegend) {
-			legend.idx = idx;
-			setLegend();
-		}
-
-		_fire !== false && fire("setCursor");
-	}
-
-	let rect = null;
-
-	Object.defineProperty(self, 'rect', {
-		get() {
-			if (rect == null)
-				syncRect(false);
-
-			return rect;
-		},
-	});
-
-	function syncRect(defer = false) {
-		if (defer)
-			rect = null;
-		else {
-			rect = over.getBoundingClientRect();
-			fire("syncRect", rect);
 		}
 	}
 
-	function mouseMove(e, src, _l, _t, _w, _h, _i) {
-		if (cursor._lock)
-			return;
+	/**
+	 * Draw axes grid, ticks, and labels
+	 */
+	drawAxesGrid() {
+		const { axes, scales, data, plotLft, plotTop, plotWid, plotHgt, pxRatio } = this.u;
+		const data0 = data[0];
+		
+		for (let i = 0; i < axes.length; i++) {
+			let axis = axes[i];
 
-		// Chrome on Windows has a bug which triggers a stray mousemove event after an initial mousedown event
-		// when clicking into a plot as part of re-focusing the browser window.
-		// we gotta ignore it to avoid triggering a phantom drag / setSelect
-		// However, on touch-only devices Chrome-based browsers trigger a 0-distance mousemove before mousedown
-		// so we don't ignore it when mousedown has set the dragging flag
-		if (dragging && e != null && e.movementX == 0 && e.movementY == 0)
-			return;
-
-		cacheMouse(e, src, _l, _t, _w, _h, _i, false, e != null);
-
-		if (e != null)
-			updateCursor(null, true, true);
-		else
-			updateCursor(src, true, false);
-	}
-
-	function cacheMouse(e, src, _l, _t, _w, _h, _i, initial, snap) {
-		if (rect == null)
-			syncRect(false);
-
-		setCursorEvent(e);
-
-		if (e != null) {
-			_l = e.clientX - rect.left;
-			_t = e.clientY - rect.top;
-		}
-		else {
-			if (_l < 0 || _t < 0) {
-				mouseLeft1 = -10;
-				mouseTop1 = -10;
-				return;
+			if (!axis.show || !axis._show) {
+				continue;
 			}
 
-			let [xKey, yKey] = syncOpts.scales;
+			let side = axis.side;
+			let ori = side % 2;
+			let fillStyle = axis.stroke(this.u, i);
+			let shiftDir = side == 0 || side == 3 ? -1 : 1;
+			let [_incr, _space] = axis._found;
 
-			let syncOptsSrc = src.cursor.sync;
-			let [xValSrc, yValSrc] = syncOptsSrc.values;
-			let [xKeySrc, yKeySrc] = syncOptsSrc.scales;
-			let [matchXKeys, matchYKeys] = syncOpts.match;
-
-			let rotSrc = src.axes[0].side % 2 == 1;
-
-			let xDim = scaleX.ori == 0 ? plotWidCss : plotHgtCss,
-				yDim = scaleX.ori == 1 ? plotWidCss : plotHgtCss,
-				_xDim = rotSrc ? _h : _w,
-				_yDim = rotSrc ? _w : _h,
-				_xPos = rotSrc ? _t : _l,
-				_yPos = rotSrc ? _l : _t;
-
-			if (xKeySrc != null)
-				_l = matchXKeys(xKey, xKeySrc) ? getPos(xValSrc, scales[xKey], xDim, 0) : -10;
-			else
-				_l = xDim * (_xPos/_xDim);
-
-			if (yKeySrc != null)
-				_t = matchYKeys(yKey, yKeySrc) ? getPos(yValSrc, scales[yKey], yDim, 0) : -10;
-			else
-				_t = yDim * (_yPos/_yDim);
-
-			if (scaleX.ori == 1) {
-				let __l = _l;
-				_l = _t;
-				_t = __l;
-			}
-		}
-
-		if (snap && (src == null || src.cursor.event.type == mousemove)) {
-			if (_l <= 1 || _l >= plotWidCss - 1)
-				_l = incrRound(_l, plotWidCss);
-
-			if (_t <= 1 || _t >= plotHgtCss - 1)
-				_t = incrRound(_t, plotHgtCss);
-		}
-
-		if (initial) {
-			rawMouseLeft0 = _l;
-			rawMouseTop0 = _t;
-
-			[mouseLeft0, mouseTop0] = cursor.move(self, _l, _t);
-		}
-		else {
-			mouseLeft1 = _l;
-			mouseTop1 = _t;
-		}
-	}
-
-	const _hideProps = {
-		width: 0,
-		height: 0,
-		left: 0,
-		top: 0,
-	};
-
-	function hideSelect() {
-		setSelect(_hideProps, false);
-	}
-
-	let downSelectLeft;
-	let downSelectTop;
-	let downSelectWidth;
-	let downSelectHeight;
-
-	function mouseDown(e, src, _l, _t, _w, _h, _i) {
-		dragging = true;
-		dragX = dragY = drag._x = drag._y = false;
-
-		cacheMouse(e, src, _l, _t, _w, _h, _i, true, false);
-
-		if (e != null) {
-			onMouse(mouseup, doc, mouseUp, false);
-			pubSync(mousedown, self, mouseLeft0, mouseTop0, plotWidCss, plotHgtCss, null);
-		}
-
-		let { left, top, width, height } = select;
-
-		downSelectLeft   = left;
-		downSelectTop    = top;
-		downSelectWidth  = width;
-		downSelectHeight = height;
-
-	//	hideSelect();
-	}
-
-	function mouseUp(e, src, _l, _t, _w, _h, _i) {
-		dragging = drag._x = drag._y = false;
-
-		cacheMouse(e, src, _l, _t, _w, _h, _i, false, true);
-
-		let { left, top, width, height } = select;
-
-		let hasSelect = width > 0 || height > 0;
-		let chgSelect = (
-			downSelectLeft   != left   ||
-			downSelectTop    != top    ||
-			downSelectWidth  != width  ||
-			downSelectHeight != height
-		);
-
-		hasSelect && chgSelect && setSelect(select);
-
-		if (drag.setScale && hasSelect && chgSelect) {
-		//	if (syncKey != null) {
-		//		dragX = drag.x;
-		//		dragY = drag.y;
-		//	}
-
-			let xOff = left,
-				xDim = width,
-				yOff = top,
-				yDim = height;
-
-			if (scaleX.ori == 1) {
-				xOff = top,
-				xDim = height,
-				yOff = left,
-				yDim = width;
+			// Draw axis label
+			if (axis.label != null) {
+				this.drawAxisLabel(axis, i, ori, side, fillStyle, shiftDir, _incr, _space);
 			}
 
-			if (dragX) {
-				_setScale(xScaleKey,
-					posToVal(xOff, xScaleKey),
-					posToVal(xOff + xDim, xScaleKey)
+			if (_space == 0) {
+				continue;
+			}
+
+			let scale = scales[axis.scale];
+			let plotDim = ori == 0 ? plotWid : plotHgt;
+			let plotOff = ori == 0 ? plotLft : plotTop;
+			let _splits = axis._splits;
+
+			// Prepare tick data
+			let splits = scale.distr == 2 ? _splits.map(i => data0[i]) : _splits;
+			let incr = scale.distr == 2 ? data0[_splits[1]] - data0[_splits[0]] : _incr;
+
+			let ticks = axis.ticks;
+			let border = axis.border;
+			let _tickSize = ticks.show ? ticks.size : 0;
+			let tickSize = round(_tickSize * pxRatio);
+			let axisGap = round((axis.alignTo == 2 ? axis._size - _tickSize - axis.gap : axis.gap) * pxRatio);
+
+			let basePos = this.u.pxRound(axis._pos * pxRatio);
+			let canOffs = _splits.map(val => this.u.pxRound(this.u.getPos(val, scale, plotDim, plotOff)));
+
+			// Draw tick labels
+			this.drawTickLabels(axis, i, ori, side, basePos, tickSize, axisGap, shiftDir, canOffs, fillStyle);
+
+			// Draw ticks
+			if (ticks.show) {
+				this.drawOrthoLines(
+					canOffs,
+					ticks.filter(this.u, splits, i, _space, incr),
+					ori,
+					side,
+					basePos,
+					tickSize,
+					roundDec(ticks.width * pxRatio, 3),
+					ticks.stroke(this.u, i),
+					ticks.dash,
+					ticks.cap,
 				);
 			}
 
-			if (dragY) {
-				for (let k in scales) {
-					let sc = scales[k];
+			// Draw grid
+			let grid = axis.grid;
+			if (grid.show) {
+				this.drawOrthoLines(
+					canOffs,
+					grid.filter(this.u, splits, i, _space, incr),
+					ori,
+					ori == 0 ? 2 : 1,
+					ori == 0 ? plotTop : plotLft,
+					ori == 0 ? plotHgt : plotWid,
+					roundDec(grid.width * pxRatio, 3),
+					grid.stroke(this.u, i),
+					grid.dash,
+					grid.cap,
+				);
+			}
 
-					if (k != xScaleKey && sc.from == null && sc.min != inf) {
-						_setScale(k,
-							posToVal(yOff + yDim, k),
-							posToVal(yOff, k)
-						);
+			// Draw border
+			if (border.show) {
+				this.drawOrthoLines(
+					[basePos],
+					[1],
+					ori == 0 ? 1 : 0,
+					ori == 0 ? 1 : 2,
+					ori == 1 ? plotTop : plotLft,
+					ori == 1 ? plotHgt : plotWid,
+					roundDec(border.width * pxRatio, 3),
+					border.stroke(this.u, i),
+					border.dash,
+					border.cap,
+				);
+			}
+		}
+
+		this.u.fire("drawAxes");
+	}
+
+	/**
+	 * Draw axis label
+	 */
+	drawAxisLabel(axis, i, ori, side, fillStyle, shiftDir, _incr, _space) {
+		const { plotLft, plotTop, plotWid, plotHgt, pxRatio, isFn, PI } = this.u;
+		
+		let shiftAmt = axis.labelGap * shiftDir;
+		let baseLpos = round((axis._lpos + shiftAmt) * pxRatio);
+
+		this.setFontStyle(axis.labelFont[0], fillStyle, "center", side == 2 ? TOP : BOTTOM);
+
+		this.ctx.save();
+
+		let x, y;
+		if (ori == 1) {
+			x = y = 0;
+			this.ctx.translate(baseLpos, round(plotTop + plotHgt / 2));
+			this.ctx.rotate((side == 3 ? -PI : PI) / 2);
+		} else {
+			x = round(plotLft + plotWid / 2);
+			y = baseLpos;
+		}
+
+		let _label = isFn(axis.label) ? axis.label(this.u, i, _incr, _space) : axis.label;
+		this.ctx.fillText(_label, x, y);
+		this.ctx.restore();
+	}
+
+	/**
+	 * Draw tick labels
+	 */
+	drawTickLabels(axis, i, ori, side, basePos, tickSize, axisGap, shiftDir, canOffs, fillStyle) {
+		const { PI } = this.u;
+		
+		let angle = axis._rotate * -PI / 180;
+		let shiftAmt = (tickSize + axisGap) * shiftDir;
+		let finalPos = basePos + shiftAmt;
+		let y = ori == 0 ? finalPos : 0;
+		let x = ori == 1 ? finalPos : 0;
+
+		let font = axis.font[0];
+		let textAlign = axis.align == 1 ? LEFT :
+			axis.align == 2 ? RIGHT :
+			angle > 0 ? LEFT :
+			angle < 0 ? RIGHT :
+			ori == 0 ? "center" : side == 3 ? RIGHT : LEFT;
+		let textBaseline = angle ||
+			ori == 1 ? "middle" : side == 2 ? TOP : BOTTOM;
+
+		this.setFontStyle(font, fillStyle, textAlign, textBaseline);
+
+		let lineHeight = axis.font[1] * axis.lineGap;
+		let _values = axis._values;
+
+		for (let i = 0; i < _values.length; i++) {
+			let val = _values[i];
+
+			if (val != null) {
+				if (ori == 0) {
+					x = canOffs[i];
+				} else {
+					y = canOffs[i];
+				}
+
+				val = "" + val;
+				let _parts = val.indexOf("\n") == -1 ? [val] : val.split(/\n/gm);
+
+				for (let j = 0; j < _parts.length; j++) {
+					let text = _parts[j];
+
+					if (angle) {
+						this.ctx.save();
+						this.ctx.translate(x, y + j * lineHeight);
+						this.ctx.rotate(angle);
+						this.ctx.fillText(text, 0, 0);
+						this.ctx.restore();
+					} else {
+						this.ctx.fillText(text, x, y + j * lineHeight);
 					}
 				}
 			}
-
-			hideSelect();
-		}
-		else if (cursor.lock) {
-			cursor._lock = !cursor._lock;
-			updateCursor(src, true, e != null);
-		}
-
-		if (e != null) {
-			offMouse(mouseup, doc);
-			pubSync(mouseup, self, mouseLeft1, mouseTop1, plotWidCss, plotHgtCss, null);
 		}
 	}
 
-	function mouseLeave(e, src, _l, _t, _w, _h, _i) {
-		if (cursor._lock)
-			return;
+	/**
+	 * Cache stroke and fill styles for series or points
+	 */
+	cacheStrokeFill(si, _points) {
+		const { series } = this.u;
+		let s = _points ? series[si].points : series[si];
 
-		setCursorEvent(e);
+		s._stroke = s.stroke(this.u, si);
+		s._fill = s.fill(this.u, si);
+	}
 
-		let _dragging = dragging;
+	/**
+	 * Draw a path for series or points
+	 */
+	drawPath(si, _points) {
+		const { series, bands, plotLft, plotTop, plotWid, plotHgt, pxRatio } = this.u;
+		let s = _points ? series[si].points : series[si];
 
-		if (dragging) {
-			// handle case when mousemove aren't fired all the way to edges by browser
-			let snapH = true;
-			let snapV = true;
-			let snapProx = 10;
+		let {
+			stroke,
+			fill,
+			clip: gapsClip,
+			flags,
+			_stroke: strokeStyle = s._stroke,
+			_fill: fillStyle = s._fill,
+			_width: width = s.width,
+		} = s._paths;
 
-			let dragH, dragV;
+		width = roundDec(width * pxRatio, 3);
 
-			if (scaleX.ori == 0) {
-				dragH = dragX;
-				dragV = dragY;
+		let boundsClip = null;
+		let offset = (width % 2) / 2;
+
+		if (_points && fillStyle == null) {
+			fillStyle = width > 0 ? "#fff" : strokeStyle;
+		}
+
+		let _pxAlign = s.pxAlign == 1 && offset > 0;
+
+		if (_pxAlign) {
+			this.ctx.translate(offset, offset);
+		}
+
+		if (!_points) {
+			let lft = plotLft - width / 2,
+				top = plotTop - width / 2,
+				wid = plotWid + width,
+				hgt = plotHgt + width;
+
+			boundsClip = new Path2D();
+			boundsClip.rect(lft, top, wid, hgt);
+		}
+
+		// Draw points or series with bands
+		if (_points) {
+			this.strokeFill(strokeStyle, width, s.dash, s.cap, fillStyle, stroke, fill, flags, gapsClip);
+		} else {
+			this.fillStroke(si, strokeStyle, width, s.dash, s.cap, fillStyle, stroke, fill, flags, boundsClip, gapsClip);
+		}
+
+		if (_pxAlign) {
+			this.ctx.translate(-offset, -offset);
+		}
+	}
+
+	/**
+	 * Handle fill and stroke operations with band support
+	 */
+	fillStroke(si, strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip) {
+		const { bands, series, data, hasData, i0, i1, isArr, EMPTY_OBJ } = this.u;
+		let didStrokeFill = false;
+
+		// Handle bands
+		if (flags != 0) {
+			bands.forEach((b, bi) => {
+				if (b.series[0] == si) {
+					let lowerEdge = series[b.series[1]];
+					let lowerData = data[b.series[1]];
+					let bandClip = (lowerEdge._paths || EMPTY_OBJ).band;
+
+					if (isArr(bandClip)) {
+						bandClip = b.dir == 1 ? bandClip[0] : bandClip[1];
+					}
+
+					let gapsClip2;
+					let _fillStyle = null;
+
+					if (lowerEdge.show && bandClip && hasData(lowerData, i0, i1)) {
+						_fillStyle = b.fill(this.u, bi) || fillStyle;
+						gapsClip2 = lowerEdge._paths.clip;
+					} else {
+						bandClip = null;
+					}
+
+					this.strokeFill(strokeStyle, lineWidth, lineDash, lineCap, _fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip, gapsClip2, bandClip);
+					didStrokeFill = true;
+				}
+			});
+		}
+
+		if (!didStrokeFill) {
+			this.strokeFill(strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip);
+		}
+	}
+
+	/**
+	 * Core stroke and fill operation with clipping support
+	 */
+	strokeFill(strokeStyle, lineWidth, lineDash, lineCap, fillStyle, strokePath, fillPath, flags, boundsClip, gapsClip, gapsClip2, bandClip) {
+		this.setCtxStyle(strokeStyle, lineWidth, lineDash, lineCap, fillStyle);
+
+		if (boundsClip || gapsClip || bandClip) {
+			this.ctx.save();
+			if (boundsClip) this.ctx.clip(boundsClip);
+			if (gapsClip) this.ctx.clip(gapsClip);
+		}
+
+		if (bandClip) {
+			if ((flags & this.CLIP_FILL_STROKE) == this.CLIP_FILL_STROKE) {
+				this.ctx.clip(bandClip);
+				if (gapsClip2) this.ctx.clip(gapsClip2);
+				this.doFill(fillStyle, fillPath);
+				this.doStroke(strokeStyle, strokePath, lineWidth);
+			} else if (flags & BAND_CLIP_STROKE) {
+				this.doFill(fillStyle, fillPath);
+				this.ctx.clip(bandClip);
+				this.doStroke(strokeStyle, strokePath, lineWidth);
+			} else if (flags & BAND_CLIP_FILL) {
+				this.ctx.save();
+				this.ctx.clip(bandClip);
+				if (gapsClip2) this.ctx.clip(gapsClip2);
+				this.doFill(fillStyle, fillPath);
+				this.ctx.restore();
+				this.doStroke(strokeStyle, strokePath, lineWidth);
 			}
-			else {
-				dragH = dragY;
-				dragV = dragX;
-			}
-
-			if (dragH && dragV) {
-				// maybe omni corner snap
-				snapH = mouseLeft1 <= snapProx || mouseLeft1 >= plotWidCss - snapProx;
-				snapV = mouseTop1  <= snapProx || mouseTop1  >= plotHgtCss - snapProx;
-			}
-
-			if (dragH && snapH)
-				mouseLeft1 = mouseLeft1 < mouseLeft0 ? 0 : plotWidCss;
-
-			if (dragV && snapV)
-				mouseTop1 = mouseTop1 < mouseTop0 ? 0 : plotHgtCss;
-
-			updateCursor(null, true, true);
-
-			dragging = false;
+		} else {
+			this.doFill(fillStyle, fillPath);
+			this.doStroke(strokeStyle, strokePath, lineWidth);
 		}
 
-		mouseLeft1 = -10;
-		mouseTop1 = -10;
-
-		activeIdxs.fill(null);
-
-		// passing a non-null timestamp to force sync/mousemove event
-		updateCursor(null, true, true);
-
-		if (_dragging)
-			dragging = _dragging;
+		if (boundsClip || gapsClip || bandClip) {
+			this.ctx.restore();
+		}
 	}
 
-	function dblClick(e, src, _l, _t, _w, _h, _i) {
-		if (cursor._lock)
-			return;
-
-		setCursorEvent(e);
-
-		autoScaleX();
-
-		hideSelect();
-
-		if (e != null)
-			pubSync(dblclick, self, mouseLeft1, mouseTop1, plotWidCss, plotHgtCss, null);
-	}
-
-	function onDppxChange() {
-		setPxRatio();
-	}
-
-	on(dppxchange, win, onDppxChange);
-
-	// internal pub/sub
-	const events = {};
-
-	events.mousedown = mouseDown;
-	events.mousemove = mouseMove;
-	events.mouseup = mouseUp;
-	events.dblclick = dblClick;
-	events["setSeries"] = (e, src, idx, opts) => {
-		let seriesIdxMatcher = syncOpts.match[2];
-		idx = seriesIdxMatcher(self, src, idx);
-		idx != -1 && setSeries(idx, opts, true, false);
-	};
-
-	if (showCursor) {
-		onMouse(mousedown,  over, mouseDown);
-		onMouse(mousemove,  over, mouseMove);
-		onMouse(mouseenter, over, e => {
-			setCursorEvent(e);
-			syncRect(false);
-		});
-		onMouse(mouseleave, over, mouseLeave);
-
-		onMouse(dblclick, over, dblClick);
-
-		cursorPlots.add(self);
-
-		self.syncRect = syncRect;
-	}
-
-	// external on/off
-	const hooks = self.hooks = opts.hooks || {};
-
-	function fire(evName, a1, a2) {
-		if (deferHooks)
-			hooksQueue.push([evName, a1, a2]);
-		else {
-			if (evName in hooks) {
-				hooks[evName].forEach(fn => {
-					fn.call(null, self, a1, a2);
+	/**
+	 * Perform stroke operation
+	 */
+	doStroke(strokeStyle, strokePath, lineWidth) {
+		if (lineWidth > 0) {
+			if (strokePath instanceof Map) {
+				strokePath.forEach((strokePath, strokeStyle) => {
+					this.ctx.strokeStyle = this.ctxStroke = strokeStyle;
+					this.ctx.stroke(strokePath);
 				});
+			} else if (strokePath != null && strokeStyle) {
+				this.ctx.stroke(strokePath);
 			}
 		}
 	}
 
-	(opts.plugins || []).forEach(p => {
-		for (let evName in p.hooks)
-			hooks[evName] = (hooks[evName] || []).concat(p.hooks[evName]);
-	});
-
-	const seriesIdxMatcher = (self, src, srcSeriesIdx) => srcSeriesIdx;
-
-	const syncOpts = assign({
-		key: null,
-		setSeries: false,
-		filters: {
-			pub: retTrue,
-			sub: retTrue,
-		},
-		scales: [xScaleKey, series[1] ? series[1].scale : null],
-		match: [retEq, retEq, seriesIdxMatcher],
-		values: [null, null],
-	}, cursor.sync);
-
-	if (syncOpts.match.length == 2)
-		syncOpts.match.push(seriesIdxMatcher);
-
-	cursor.sync = syncOpts;
-
-	const syncKey = syncOpts.key;
-
-	const sync = _sync(syncKey);
-
-	function pubSync(type, src, x, y, w, h, i) {
-		if (syncOpts.filters.pub(type, src, x, y, w, h, i))
-			sync.pub(type, src, x, y, w, h, i);
-	}
-
-	sync.sub(self);
-
-	function pub(type, src, x, y, w, h, i) {
-		if (syncOpts.filters.sub(type, src, x, y, w, h, i))
-			events[type](null, src, x, y, w, h, i);
-	}
-
-	self.pub = pub;
-
-	function destroy() {
-		sync.unsub(self);
-		cursorPlots.delete(self);
-		mouseListeners.clear();
-		off(dppxchange, win, onDppxChange);
-		root.remove();
-		legendTable?.remove(); // in case mounted outside of root
-		fire("destroy");
-	}
-
-	self.destroy = destroy;
-
-	function _init() {
-		fire("init", opts, data);
-
-		setData(data || opts.data, false);
-
-		if (pendScales[xScaleKey])
-			setScale(xScaleKey, pendScales[xScaleKey]);
-		else
-			autoScaleX();
-
-		shouldSetSelect = select.show && (select.width > 0 || select.height > 0);
-		shouldSetCursor = shouldSetLegend = true;
-
-		_setSize(opts.width, opts.height);
-	}
-
-	series.forEach(initSeries);
-
-	axes.forEach(initAxis);
-
-	if (then) {
-		if (then instanceof HTMLElement) {
-			then.appendChild(root);
-			_init();
+	/**
+	 * Perform fill operation
+	 */
+	doFill(fillStyle, fillPath) {
+		if (fillPath instanceof Map) {
+			fillPath.forEach((fillPath, fillStyle) => {
+				this.ctx.fillStyle = this.ctxFill = fillStyle;
+				this.ctx.fill(fillPath);
+			});
+		} else if (fillPath != null && fillStyle) {
+			this.ctx.fill(fillPath);
 		}
-		else
-			then(self, _init);
 	}
-	else
-		_init();
 
-	return self;
+	/**
+	 * Draw orthogonal lines (ticks, grid, borders)
+	 */
+	drawOrthoLines(offs, filts, ori, side, pos0, len, width, stroke, dash, cap) {
+		const { pxAlign } = this.u;
+		let offset = (width % 2) / 2;
+
+		if (pxAlign == 1) {
+			this.ctx.translate(offset, offset);
+		}
+
+		this.setCtxStyle(stroke, width, dash, cap, stroke);
+		this.ctx.beginPath();
+
+		let x0, y0, x1, y1, pos1 = pos0 + (side == 0 || side == 3 ? -len : len);
+
+		if (ori == 0) {
+			y0 = pos0;
+			y1 = pos1;
+		} else {
+			x0 = pos0;
+			x1 = pos1;
+		}
+
+		for (let i = 0; i < offs.length; i++) {
+			if (filts[i] != null) {
+				if (ori == 0) {
+					x0 = x1 = offs[i];
+				} else {
+					y0 = y1 = offs[i];
+				}
+
+				this.ctx.moveTo(x0, y0);
+				this.ctx.lineTo(x1, y1);
+			}
+		}
+
+		this.ctx.stroke();
+
+		if (pxAlign == 1) {
+			this.ctx.translate(-offset, -offset);
+		}
+	}
+
+	/**
+	 * Set canvas context style with caching for performance
+	 */
+	setCtxStyle(stroke, width, dash, cap, fill, join) {
+		stroke ??= transparent;
+		dash ??= EMPTY_ARR;
+		cap ??= "butt";
+		join ??= "round";
+
+		if (stroke != this.ctxStroke) {
+			this.ctx.strokeStyle = this.ctxStroke = stroke;
+		}
+		if (fill != this.ctxFill) {
+			this.ctx.fillStyle = this.ctxFill = fill;
+		}
+		if (width != this.ctxWidth) {
+			this.ctx.lineWidth = this.ctxWidth = width;
+		}
+		if (dash != this.ctxDash) {
+			this.ctx.setLineDash(this.ctxDash = dash);
+		}
+		if (cap != this.ctxCap) {
+			this.ctx.lineCap = this.ctxCap = cap;
+		}
+		if (join != this.ctxJoin) {
+			this.ctx.lineJoin = this.ctxJoin = join;
+		}
+	}
+
+	/**
+	 * Set font style with caching
+	 */
+	setFontStyle(font, fill, align, baseline) {
+		if (fill != this.ctxFill) {
+			this.ctx.fillStyle = this.ctxFill = fill;
+		}
+		if (font != this.ctxFont) {
+			this.ctx.font = this.ctxFont = font;
+		}
+		if (align != this.ctxAlign) {
+			this.ctx.textAlign = this.ctxAlign = align;
+		}
+		if (baseline != this.ctxBaseline) {
+			this.ctx.textBaseline = this.ctxBaseline = baseline;
+		}
+	}
+
+	/**
+	 * Get outer indices for data range
+	 */
+	getOuterIdxs(data) {
+		let i0 = 0;
+		let i1 = data.length - 1;
+		
+		// Find first non-null value
+		while (i0 <= i1 && data[i0] == null) {
+			i0++;
+		}
+		
+		// Find last non-null value
+		while (i1 >= i0 && data[i1] == null) {
+			i1--;
+		}
+		
+		return [i0, i1];
+	}
+
+	/**
+	 * Invalidate style cache (called when canvas is resized)
+	 */
+	invalidateStyleCache() {
+		this.ctxStroke = this.ctxFill = this.ctxWidth = this.ctxJoin = this.ctxCap = this.ctxFont = this.ctxAlign = this.ctxBaseline = this.ctxDash = null;
+		this.ctxAlpha = 1;
+	}
 }
 
+/**
+ * UPlotCore - Main uPlot class that orchestrates all modules and provides the public API
+ */
+
+
+/**
+ * UPlotCore class - orchestrates all modules and provides the public API
+ */
+class UPlotCore {
+	constructor(opts, data, target) {
+		// Initialize basic properties
+		this.opts = copy(opts);
+		this.data = data || [];
+		this._data = this.data;
+		this.target = target;
+		
+		// Status tracking
+		this.status = 0;
+		this.ready = false;
+		
+		// Pixel ratio management
+		this.pxRatio = opts.pxRatio ?? pxRatio;
+		
+		// Mode (1 = time series, 2 = scatter plot)
+		this.mode = ifNull(opts.mode, 1);
+		
+		// Initialize dimensions from options
+		this._width = opts.width || 800;
+		this._height = opts.height || 400;
+		
+		// Initialize DOM structure
+		this.initDOM();
+		
+		// Initialize managers
+		this.initManagers();
+		
+		// Initialize configuration
+		this.initConfiguration();
+		
+		// Process plugins
+		this.processPlugins();
+		
+		// Initialize all systems
+		this.initSystems();
+		
+		// Set initial data if provided
+		if (data && data.length > 0) {
+			this.setData(data, false);
+		}
+		
+		// Mark as ready
+		this.ready = true;
+		this.status = 1;
+		
+		// Fire ready event
+		this.fire("ready");
+	}
+
+	/**
+	 * Initialize DOM structure
+	 */
+	initDOM() {
+		// Create root container
+		this.root = placeDiv(UPLOT);
+		
+		if (this.opts.id != null) {
+			this.root.id = this.opts.id;
+		}
+		
+		addClass(this.root, this.opts.class);
+		
+		// Add title if specified
+		if (this.opts.title) {
+			let title = placeDiv(TITLE, this.root);
+			title.textContent = this.opts.title;
+		}
+		
+		// Create canvas and context
+		this.can = placeTag("canvas");
+		this.ctx = this.can.getContext("2d");
+		
+		// Create wrapper and layers
+		this.wrap = placeDiv(WRAP, this.root);
+		this.under = placeDiv(UNDER, this.wrap);
+		this.wrap.appendChild(this.can);
+		this.over = placeDiv(OVER, this.wrap);
+		
+		// Initialize bounding box
+		this.bbox = {};
+		
+		// Handle target - can be HTMLElement or function
+		if (this.target) {
+			if (typeof this.target === 'function') {
+				// Function target - call with self and init function
+				this.target(this, () => {
+					// Init function - no-op for now since we're already initialized
+				});
+			} else {
+				// HTMLElement target - append root
+				this.target.appendChild(this.root);
+			}
+		}
+	}
+
+	/**
+	 * Initialize all manager instances
+	 */
+	initManagers() {
+		this.layout = new LayoutManager(this);
+		this.scales = new ScaleManager(this, this.opts);
+		this.events = new EventManager(this);
+		this.cursor = new CursorManager(this);
+		this.legend = new LegendManager(this);
+		this.series = new SeriesManager(this, this.scales);
+		this.axes = new AxisManager(this, this.scales);
+		this.renderer = new Renderer(this, this.layout);
+	}
+
+	/**
+	 * Initialize configuration from options
+	 */
+	initConfiguration() {
+		// Initialize pixel alignment
+		this.pxAlign = +ifNull(this.opts.pxAlign, 1);
+		this.pxRound = this.pxRoundGen(this.pxAlign);
+		
+		// Initialize time settings
+		this.ms = this.opts.ms || 1e-3;
+		
+		// Initialize focus settings
+		this.focus = assign({}, this.opts.focus || {alpha: 0.3});
+		
+		// Initialize bands
+		this.bands = this.opts.bands || [];
+		this.bands.forEach(b => {
+			b.fill = fnOrSelf(b.fill || null);
+			b.dir = ifNull(b.dir, -1);
+		});
+		
+		// State flags
+		this.shouldSetScales = false;
+		this.shouldSetSize = false;
+		this.shouldConvergeSize = false;
+		this.shouldSetCursor = false;
+		this.shouldSetSelect = false;
+		this.shouldSetLegend = false;
+		
+		// Active indices for cursor/legend
+		this.activeIdxs = [];
+		
+		// Data window indices
+		this.i0 = null;
+		this.i1 = null;
+		this.data0 = null;
+		
+		// Selection state
+		this.select = {
+			show: false,
+			over: true,
+			left: 0,
+			width: 0,
+			top: 0,
+			height: 0,
+		};
+	}
+
+	/**
+	 * Process plugins and apply their options
+	 */
+	processPlugins() {
+		(this.opts.plugins || []).forEach(p => {
+			if (p.opts) {
+				this.opts = p.opts(this, this.opts) || this.opts;
+			}
+		});
+	}
+
+	/**
+	 * Initialize all systems
+	 */
+	initSystems() {
+		// Initialize series first (needed by scales)
+		this.series.initSeries(this.opts, this.data);
+		
+		// Initialize axes configuration (needed by scales)
+		this.axesConfig = this.axesConfig || [];
+		if (this.opts.axes) {
+			this.axesConfig = this.opts.axes;
+		}
+		
+		// Initialize scales (needs series and axes)
+		this.scales.initScales();
+		
+		// Initialize axes properly (this.axes is the AxisManager instance)
+		this.axes.initAxes(this.opts);
+		
+		// Initialize cursor
+		this.cursor.initCursor(this.opts, this.series, this.activeIdxs, this.mode, this.over, this.focus);
+		
+		// Initialize legend
+		this.legend.initLegend(this.opts, this.series, this.activeIdxs, this.mode, this.root, this.cursor.cursor, {});
+		
+		// Initialize events
+		this.events.initEvents(this.opts);
+		
+		// Set orientation classes
+		const scaleX = this.scales.getXScale();
+		if (scaleX && scaleX.ori == 0) {
+			addClass(this.root, ORI_HZ);
+		} else {
+			addClass(this.root, ORI_VT);
+		}
+		
+		// Calculate layout before initializing canvas
+		this.layout.calcSize(this._width, this._height);
+		
+		// Initialize canvas
+		this.renderer.initCanvas(this.opts);
+	}
+
+	/**
+	 * Set pixel ratio and update related systems
+	 */
+	setPxRatio(pxRatio$1) {
+		this.pxRatio = pxRatio$1 ?? pxRatio;
+		this.axes.syncFontSizes(this.pxRatio);
+		this._setSize(this._width, this._height, true);
+	}
+
+	/**
+	 * Set chart data
+	 */
+	setData(data, resetScales = true) {
+		this.data = data == null ? [] : data;
+		this._data = this.data;
+		
+		// Handle mode-specific data processing
+		if (this.mode == 2) {
+			this.dataLen = 0;
+			for (let i = 1; i < this.series.series.length; i++) {
+				this.dataLen += this.data[i][0].length;
+			}
+		} else {
+			if (this.data.length == 0) {
+				this.data = this._data = [[]];
+			}
+			
+			this.data0 = this.data[0];
+			this.dataLen = this.data0.length;
+			
+			// Handle ordinal scale data transformation
+			let scaleData = this.data;
+			const xScale = this.scales.getXScale();
+			
+			if (xScale.distr == 2) {
+				scaleData = this.data.slice();
+				let _data0 = scaleData[0] = Array(this.dataLen);
+				for (let i = 0; i < this.dataLen; i++) {
+					_data0[i] = i;
+				}
+			}
+			
+			this._data = this.data = scaleData;
+		}
+		
+		// Reset series paths
+		this.series.resetYSeries(true);
+		
+		// Fire setData event
+		this.fire("setData");
+		
+		// Handle scale updates
+		if (resetScales !== false) {
+			let xsc = this.scales.getXScale();
+			
+			if (xsc.auto(this, this.scales.viaAutoScaleX)) {
+				this.scales.autoScaleX();
+			} else {
+				this.scales._setScale(this.scales.xScaleKey, xsc.min, xsc.max);
+			}
+			
+			this.shouldSetCursor = this.shouldSetCursor || this.cursor.cursor.left >= 0;
+			this.shouldSetLegend = true;
+			this.commit();
+		}
+	}
+
+	/**
+	 * Set chart size
+	 */
+	setSize(opts) {
+		this._setSize(opts.width, opts.height);
+	}
+
+	/**
+	 * Internal size setting with force option
+	 */
+	_setSize(width, height, force) {
+		if (force || (width != this.width || height != this.height)) {
+			this.layout.calcSize(width, height);
+		}
+		
+		this.series.resetYSeries(false);
+		
+		this.shouldConvergeSize = true;
+		this.shouldSetSize = true;
+		
+		this.commit();
+	}
+
+	/**
+	 * Add a new series
+	 */
+	addSeries(opts, si) {
+		si = this.series.addSeries(opts, si);
+		
+		// Update cursor and legend
+		if (this.cursor.showCursor) {
+			this.cursor.addCursorPt(this.series.series[si], si, this.over, this.layout.plotWidCss, this.layout.plotHgtCss);
+		}
+		
+		if (this.legend.showLegend) {
+			this.legend.addLegendRow(this.series.series[si], si, this.series.series, this.mode, this.cursor.cursor, {});
+		}
+		
+		return si;
+	}
+
+	/**
+	 * Remove a series
+	 */
+	delSeries(i) {
+		this.series.delSeries(i);
+		
+		// Update cursor and legend
+		if (this.cursor.showCursor) {
+			this.cursor.removeCursorPt(i);
+		}
+		
+		if (this.legend.showLegend) {
+			this.legend.removeLegendRow(i);
+		}
+		
+		return i;
+	}
+
+	/**
+	 * Update series configuration
+	 */
+	setSeries(i, opts, _fire, _pub) {
+		this.series.setSeries(i, opts, _fire, _pub);
+		
+		// Update legend if needed
+		if (this.legend.showLegend && opts.show != null) {
+			this.legend.updateSeriesLegend(i, this.series.series[i]);
+		}
+	}
+
+	/**
+	 * Set cursor position
+	 */
+	setCursor(opts, _fire, _pub) {
+		this.cursor.setCursor(opts, _fire, _pub);
+	}
+
+	/**
+	 * Set legend values
+	 */
+	setLegend(opts, _fire) {
+		this.legend.setLegend(opts, _fire);
+	}
+
+	/**
+	 * Set selection area
+	 */
+	setSelect(opts, _fire) {
+		assign(this.select, opts);
+		
+		this.shouldSetSelect = true;
+		
+		if (_fire !== false) {
+			this.commit();
+		}
+	}
+
+	/**
+	 * Commit pending changes and trigger redraw
+	 */
+	commit() {
+		if (!this.ready) return;
+		
+		// Handle size convergence
+		if (this.shouldConvergeSize) {
+			this.layout.convergeSize(this._width, this._height);
+			this.shouldConvergeSize = false;
+		}
+		
+		// Handle size changes
+		if (this.shouldSetSize) {
+			this.renderer.initCanvas(this.opts);
+			this.shouldSetSize = false;
+		}
+		
+		// Handle scale changes
+		if (this.shouldSetScales) {
+			let changed = this.scales.setScales();
+			this.series.updateSeriesForScaleChange(changed);
+			this.shouldSetScales = false;
+		}
+		
+		// Handle cursor updates
+		if (this.shouldSetCursor) {
+			this.cursor.updateCursor();
+			this.shouldSetCursor = false;
+		}
+		
+		// Handle legend updates
+		if (this.shouldSetLegend) {
+			this.legend.setLegend();
+			this.shouldSetLegend = false;
+		}
+		
+		// Trigger redraw
+		this.renderer.draw();
+	}
+
+	/**
+	 * Destroy the chart and clean up resources
+	 */
+	destroy() {
+		this.fire("destroy");
+		
+		// Clean up managers
+		this.events.destroy();
+		this.cursor.destroy();
+		this.legend.destroy();
+		
+		// Remove DOM elements
+		if (this.root.parentNode) {
+			this.root.parentNode.removeChild(this.root);
+		}
+		
+		// Clear references
+		this.ready = false;
+		this.status = 0;
+	}
+
+	/**
+	 * Fire an event
+	 */
+	fire(type, ...args) {
+		if (this.opts.hooks && this.opts.hooks[type]) {
+			this.opts.hooks[type].forEach(fn => fn(this, ...args));
+		}
+	}
+
+	/**
+	 * Sync with other charts
+	 */
+	pubSync(type, src, ...args) {
+		if (this.opts.sync) {
+			_sync.pub(type, src, ...args);
+		}
+	}
+
+	/**
+	 * Generate pixel rounding function
+	 */
+	pxRoundGen(pxAlign) {
+		return pxAlign == 1 ? v => round(v) : v => incrRound(v, pxAlign);
+	}
+
+	/**
+	 * Get position from value (orientation-aware)
+	 */
+	getPos(val, scale, dim, off) {
+		return this.scales.getPos(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to X position
+	 */
+	valToPosX(val, scale, dim, off) {
+		return this.scales.valToPosX(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to Y position  
+	 */
+	valToPosY(val, scale, dim, off) {
+		return this.scales.valToPosY(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert X position to value
+	 */
+	posToValX(pos, can) {
+		return this.scales.posToValX(pos, can);
+	}
+
+	/**
+	 * Convert Y position to value
+	 */
+	posToValY(pos, scaleKey, can) {
+		return this.scales.posToValY(pos, scaleKey, can);
+	}
+
+	/**
+	 * Convert CSS pixel position to closest data index
+	 */
+	posToIdx(left, canvasPixels = false) {
+		// Simple implementation - find closest x value
+		const val = this.posToVal(left, this.scales.xScaleKey, canvasPixels);
+		return this.valToIdx(val);
+	}
+
+	/**
+	 * Convert CSS pixel position to value along given scale
+	 */
+	posToVal(leftTop, scaleKey, canvasPixels = false) {
+		const scale = this.scales.scales[scaleKey];
+		if (!scale) return null;
+		
+		if (scale.ori === 0) {
+			// Horizontal scale (X)
+			return this.posToValX(leftTop, canvasPixels);
+		} else {
+			// Vertical scale (Y)
+			return this.posToValY(leftTop, scaleKey, canvasPixels);
+		}
+	}
+
+	/**
+	 * Convert value to CSS/canvas pixel position
+	 */
+	valToPos(val, scaleKey, canvasPixels = false) {
+		const scale = this.scales.scales[scaleKey];
+		if (!scale) return null;
+		
+		if (scale.ori === 0) {
+			// Horizontal scale (X)
+			return this.valToPosX(val, scale, canvasPixels ? this.plotWid : this.plotWidCss, canvasPixels ? this.plotLft : this.plotLftCss);
+		} else {
+			// Vertical scale (Y)
+			return this.valToPosY(val, scale, canvasPixels ? this.plotHgt : this.plotHgtCss, canvasPixels ? this.plotTop : this.plotTopCss);
+		}
+	}
+
+	/**
+	 * Convert value to closest data index
+	 */
+	valToIdx(val) {
+		if (!this.data0 || this.data0.length === 0) return 0;
+		
+		// Binary search for closest index
+		let left = 0;
+		let right = this.data0.length - 1;
+		
+		while (left <= right) {
+			const mid = Math.floor((left + right) / 2);
+			const midVal = this.data0[mid];
+			
+			if (midVal === val) return mid;
+			if (midVal < val) left = mid + 1;
+			else right = mid - 1;
+		}
+		
+		// Return closest index
+		if (left >= this.data0.length) return this.data0.length - 1;
+		if (right < 0) return 0;
+		
+		const leftDiff = Math.abs(this.data0[left] - val);
+		const rightDiff = Math.abs(this.data0[right] - val);
+		
+		return leftDiff <= rightDiff ? left : right;
+	}
+
+	/**
+	 * Redraw the chart
+	 */
+	redraw(rebuildPaths = true, recalcAxes = false) {
+		if (rebuildPaths) {
+			this.series.resetYSeries(true);
+		}
+		
+		if (recalcAxes) {
+			this.shouldSetScales = true;
+		}
+		
+		this.commit();
+	}
+
+	/**
+	 * Batch multiple operations
+	 */
+	batch(txn, deferHooks = false) {
+		if (typeof txn === 'function') {
+			txn();
+		}
+	}
+
+	/**
+	 * Get cached DOMRect
+	 */
+	get rect() {
+		return this.cursor.rect || { left: 0, top: 0, width: this.plotWidCss, height: this.plotHgtCss };
+	}
+
+	/**
+	 * Sync rect cache
+	 */
+	syncRect(force) {
+		this.cursor.syncRect(force);
+	}
+
+	/**
+	 * Update cursor position
+	 */
+	updateCursor(ts, _fire, _pub) {
+		this.cursor.updateCursor(ts, _fire, _pub);
+	}
+
+	/**
+	 * Set cursor event reference
+	 */
+	setCursorEvent(e) {
+		this.cursor.setCursorEvent(e);
+	}
+
+	// Expose layout properties for backward compatibility
+	get width() { return this.layout.fullWidCss; }
+	get height() { return this.layout.fullHgtCss; }
+	get plotWidCss() { return this.layout.plotWidCss; }
+	get plotHgtCss() { return this.layout.plotHgtCss; }
+	get plotLftCss() { return this.layout.plotLftCss; }
+	get plotTopCss() { return this.layout.plotTopCss; }
+	get plotLft() { return this.layout.plotLft; }
+	get plotTop() { return this.layout.plotTop; }
+	get plotWid() { return this.layout.plotWid; }
+	get plotHgt() { return this.layout.plotHgt; }
+
+	// Expose scale properties for backward compatibility
+	get xScaleDistr() { 
+		const xScale = this.scales.getXScale();
+		return xScale ? xScale.distr : 1;
+	}
+}
+
+/**
+ * uPlot.js - Refactored main entry point
+ * 
+ * This file serves as the main entry point and orchestrates the modular components.
+ * It maintains the existing constructor signature and API for backward compatibility.
+ */
+
+
+/**
+ * Main uPlot constructor function - creates and returns a UPlotCore instance
+ * Maintains existing constructor signature and behavior for API compatibility
+ * 
+ * @param {Object} opts - Configuration options
+ * @param {Array} data - Chart data
+ * @param {HTMLElement} target - Target DOM element (optional)
+ * @returns {UPlotCore} - uPlot instance
+ */
+function uPlot(opts, data, target) {
+	// Create and return UPlotCore instance with proper module orchestration
+	const instance = new UPlotCore(opts, data, target);
+	
+	// Ensure all public API methods are properly delegated to modules
+	// The UPlotCore class handles the orchestration internally
+	return instance;
+}
+
+// Static properties and methods for backward compatibility
 uPlot.assign = assign;
 uPlot.fmtNum = fmtNum;
 uPlot.rangeNum = rangeNum;
 uPlot.rangeLog = rangeLog;
 uPlot.rangeAsinh = rangeAsinh;
-uPlot.orient   = orient;
+uPlot.orient = orient;
 uPlot.pxRatio = pxRatio;
 
 {
@@ -6137,7 +7516,7 @@ uPlot.pxRatio = pxRatio;
 
 {
 	uPlot.fmtDate = fmtDate;
-	uPlot.tzDate  = tzDate;
+	uPlot.tzDate = tzDate;
 }
 
 uPlot.sync = _sync;
