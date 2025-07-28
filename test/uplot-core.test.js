@@ -237,7 +237,7 @@ describe('UPlotCore', () => {
 		});
 
 		it('should reset scales by default', () => {
-			const autoScaleXSpy = vi.spyOn(uplot.scales, 'autoScaleX');
+			const autoScaleXSpy = vi.spyOn(uplot.scalesManager, 'autoScaleX');
 			const data = [[1, 2, 3], [10, 20, 30]];
 			
 			uplot.setData(data);
@@ -246,7 +246,7 @@ describe('UPlotCore', () => {
 		});
 
 		it('should not reset scales when resetScales is false', () => {
-			const autoScaleXSpy = vi.spyOn(uplot.scales, 'autoScaleX');
+			const autoScaleXSpy = vi.spyOn(uplot.scalesManager, 'autoScaleX');
 			const data = [[1, 2, 3], [10, 20, 30]];
 			
 			uplot.setData(data, false);
@@ -387,7 +387,7 @@ describe('UPlotCore', () => {
 		});
 
 		it('should update cursor position', () => {
-			const setCursorSpy = vi.spyOn(uplot.cursor, 'setCursor');
+			const setCursorSpy = vi.spyOn(uplot.cursorManager, 'setCursor');
 			
 			uplot.setCursor({ left: 100, top: 200 });
 			
@@ -456,7 +456,7 @@ describe('UPlotCore', () => {
 
 		it('should clean up managers', () => {
 			const eventDestroySpy = vi.spyOn(uplot.events, 'destroy');
-			const cursorDestroySpy = vi.spyOn(uplot.cursor, 'destroy');
+			const cursorDestroySpy = vi.spyOn(uplot.cursorManager, 'destroy');
 			const legendDestroySpy = vi.spyOn(uplot.legend, 'destroy');
 			
 			uplot.destroy();
@@ -542,8 +542,8 @@ describe('UPlotCore', () => {
 		});
 
 		it('should delegate valToPosX to scales manager', () => {
-			const valToPosXSpy = vi.spyOn(uplot.scales, 'valToPosX');
-			const xScale = uplot.scales.scales.x;
+			const valToPosXSpy = vi.spyOn(uplot.scalesManager, 'valToPosX');
+			const xScale = uplot.scalesManager.scales.x;
 			// Set up scale with proper min/max for testing
 			xScale._min = 0;
 			xScale._max = 100;
@@ -554,8 +554,8 @@ describe('UPlotCore', () => {
 		});
 
 		it('should delegate valToPosY to scales manager', () => {
-			const valToPosYSpy = vi.spyOn(uplot.scales, 'valToPosY');
-			const yScale = uplot.scales.scales.y;
+			const valToPosYSpy = vi.spyOn(uplot.scalesManager, 'valToPosY');
+			const yScale = uplot.scalesManager.scales.y;
 			// Set up scale with proper min/max for testing
 			yScale._min = 0;
 			yScale._max = 100;
@@ -566,9 +566,9 @@ describe('UPlotCore', () => {
 		});
 
 		it('should delegate posToValX to scales manager', () => {
-			const posToValXSpy = vi.spyOn(uplot.scales, 'posToValX');
+			const posToValXSpy = vi.spyOn(uplot.scalesManager, 'posToValX');
 			// Set up scale with proper min/max for testing
-			const xScale = uplot.scales.scales.x;
+			const xScale = uplot.scalesManager.scales.x;
 			xScale._min = 0;
 			xScale._max = 100;
 			
@@ -578,9 +578,9 @@ describe('UPlotCore', () => {
 		});
 
 		it('should delegate posToValY to scales manager', () => {
-			const posToValYSpy = vi.spyOn(uplot.scales, 'posToValY');
+			const posToValYSpy = vi.spyOn(uplot.scalesManager, 'posToValY');
 			// Set up scale with proper min/max for testing
-			const yScale = uplot.scales.scales.y;
+			const yScale = uplot.scalesManager.scales.y;
 			yScale._min = 0;
 			yScale._max = 100;
 			

@@ -587,12 +587,6 @@ export class ScaleManager {
 			if (opts.distr != null || opts.asinh != null) {
 				sc.valToPct = this.initValToPct(sc);
 			}
-		} else {
-			throw new UPlotError(
-				`Scale '${key}' not found`,
-				'ScaleManager',
-				{ method: 'updateScale', key, type: ERROR_TYPES.INVALID_ARGUMENT }
-			);
 		}
 	}
 }
