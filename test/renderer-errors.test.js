@@ -40,6 +40,7 @@ describe('Renderer Error Handling', () => {
 
 		mockUplot = {
 			ctx: mockCtx,
+			can: mockCanvas,
 			pxRatio: 1,
 			opts: {
 				drawOrder: ['axes', 'series']
@@ -228,6 +229,16 @@ describe('Renderer Error Handling', () => {
 		});
 
 		it('should initialize canvas successfully with valid parameters', () => {
+			// Make canvas properties writable
+			Object.defineProperty(mockCanvas, 'width', {
+				writable: true,
+				value: 400
+			});
+			Object.defineProperty(mockCanvas, 'height', {
+				writable: true,
+				value: 300
+			});
+			
 			expect(() => {
 				renderer.initCanvas({});
 			}).not.toThrow();
@@ -393,9 +404,19 @@ describe('Renderer Error Handling', () => {
 		});
 
 		it('should accumulate errors in error reporter', () => {
-			// Generate multiple errors
-			try { renderer.clear(); renderer.ctx = null; renderer.clear(); } catch (e) {}
-			try { mockUplot.pxRatio = -1; renderer.initCanvas({}); } catch (e) {}
+			// Generate errors that get reported to the error reporter
+			// Constructor errors are reported automatically
+			try {
+				new Renderer(null, mockLayoutManager);
+			} catch (e) {
+				// Constructor reports errors to errorReporter
+			}
+			
+			try {
+				new Renderer(mockUplot, null);
+			} catch (e) {
+				// Constructor reports errors to errorReporter
+			}
 			
 			const errors = errorReporter.getErrors('Renderer');
 			expect(errors.length).toBeGreaterThan(0);

@@ -33,10 +33,13 @@ const createMockContext = () => ({
 });
 
 // Mock uPlot instance
-const createMockUPlot = (overrides = {}) => ({
-	ctx: createMockContext(),
-	opts: { drawOrder: ["axes", "series"] },
-	pxRatio: 1,
+const createMockUPlot = (overrides = {}) => {
+	const ctx = createMockContext();
+	return {
+		ctx,
+		can: ctx.canvas,
+		opts: { drawOrder: ["axes", "series"] },
+		pxRatio: 1,
 	series: [],
 	data: [[]],
 	axes: [],
@@ -59,7 +62,8 @@ const createMockUPlot = (overrides = {}) => ({
 	EMPTY_OBJ: {},
 	hasData: vi.fn(() => true),
 	...overrides
-});
+};
+};
 
 // Mock layout manager
 const createMockLayoutManager = () => ({
@@ -83,7 +87,7 @@ describe('Renderer', () => {
 			expect(renderer.u).toBe(mockUPlot);
 			expect(renderer.layoutManager).toBe(mockLayoutManager);
 			expect(renderer.ctx).toBe(mockUPlot.ctx);
-			expect(renderer.can).toBe(mockUPlot.ctx.canvas);
+			expect(renderer.can).toBe(mockUPlot.can);
 		});
 
 		it('should initialize style cache properties', () => {

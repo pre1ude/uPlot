@@ -318,7 +318,7 @@ export class LegendManager {
 	}
 
 	updateSeriesLegend(i, s) {
-		if (!this.showLegend) return;
+		if (!this.showLegend || !this.legendRows[i]) return;
 		
 		if (s.show) {
 			remClass(this.legendRows[i], OFF);
@@ -335,7 +335,8 @@ export class LegendManager {
 
 	onMouse(ev, targ, fn, onlyTarg = true) {
 		const targListeners = this.mouseListeners.get(targ) || {};
-		const listener = this.uplot.cursor.bind[ev](this.uplot, targ, fn, onlyTarg);
+		const listener = this.uplot.cursor.bind && this.uplot.cursor.bind[ev] ? 
+			this.uplot.cursor.bind[ev](this.uplot, targ, fn, onlyTarg) : null;
 
 		if (listener) {
 			on(ev, targ, targListeners[ev] = listener);

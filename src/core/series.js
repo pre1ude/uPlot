@@ -120,8 +120,14 @@ export class SeriesManager {
 				});
 			});
 			
-			// Set reference on uplot instance
+			// Set reference on uplot instance (keep both manager and array)
 			this.uplot.series = this.series;
+			this.uplot.seriesManager = this;
+			
+			// Add manager methods to the series array for backward compatibility
+			this.uplot.series.getSeriesCount = () => this.series.length;
+			this.uplot.series.getSeries = (i) => this.series[i];
+			this.uplot.series.uplot = this.uplot;
 			
 			return this.series;
 		}).call(this, opts, data);
@@ -199,6 +205,24 @@ export class SeriesManager {
 			points.stroke = fnOrSelf(points.stroke);
 			points.paths = fnOrSelf(points.paths);
 			points.pxAlign = s.pxAlign;
+		}
+		
+		// Ensure points are always configured for non-x-axis series (fallback)
+		if (i > 0 && !s.points) {
+			let _ptDia = ptDia(max(1, s.width || 1), 1);
+			s.points = {
+				size: _ptDia,
+				width: max(1, _ptDia * 0.2),
+				stroke: s.stroke,
+				space: _ptDia * 2,
+				paths: this.pointsPath,
+				_stroke: null,
+				_fill: null,
+				show: fnOrSelf(null),
+				filter: fnOrSelf(null),
+				fill: fnOrSelf(null),
+				pxAlign: s.pxAlign || 1
+			};
 		}
 	}
 

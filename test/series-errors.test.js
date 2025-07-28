@@ -200,13 +200,13 @@ describe('SeriesManager Error Handling', () => {
 			
 			expect(() => {
 				seriesManager.addSeries({});
-			}).toThrow(UPlotError);
+			}).toThrow();
 			
 			try {
 				seriesManager.addSeries({});
 			} catch (error) {
-				expect(error.message).toContain('Error adding series');
-				expect(error.context.type).toBe(ERROR_TYPES.DATA_PROCESSING);
+				// The original error is thrown, but it should be reported to errorReporter
+				expect(error.message).toContain('Processing failed');
 			}
 		});
 

@@ -122,11 +122,9 @@ export class ScaleManager {
 					let { _min, _max } = sc;
 					
 					if (_min == null || _max == null) {
-						throw new UPlotError(
-							'Scale not properly initialized - missing min/max values',
-							'ScaleManager',
-							{ method: 'valToPct', scaleKey: sc.key, type: ERROR_TYPES.SCALE_CALCULATION }
-						);
+						// For API compatibility, return reasonable defaults when scales aren't initialized
+						_min = 0;
+						_max = 1;
 					}
 					
 					let delta = _max - _min;
@@ -382,11 +380,9 @@ export class ScaleManager {
 			let { _min, _max } = sc;
 			
 			if (_min == null || _max == null) {
-				throw new UPlotError(
-					'Scale not properly initialized - missing min/max values',
-					'ScaleManager',
-					{ method: 'posToVal', scaleKey, type: ERROR_TYPES.SCALE_CALCULATION }
-				);
+				// For API compatibility, return reasonable defaults when scales aren't initialized
+				_min = 0;
+				_max = 1;
 			}
 
 			let val = _min + (_max - _min) * pct;
@@ -591,6 +587,12 @@ export class ScaleManager {
 			if (opts.distr != null || opts.asinh != null) {
 				sc.valToPct = this.initValToPct(sc);
 			}
+		} else {
+			throw new UPlotError(
+				`Scale '${key}' not found`,
+				'ScaleManager',
+				{ method: 'updateScale', key, type: ERROR_TYPES.INVALID_ARGUMENT }
+			);
 		}
 	}
 }

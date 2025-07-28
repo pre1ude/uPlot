@@ -52,6 +52,7 @@ export class Renderer {
 				);
 			}
 			
+			this.uplot = uplot;
 			this.u = uplot;
 			this.layoutManager = layoutManager;
 			this.ctx = uplot.ctx;

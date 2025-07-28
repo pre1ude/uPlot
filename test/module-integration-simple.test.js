@@ -146,10 +146,20 @@ describe('Module Integration Tests - Simplified', () => {
 				width: 800,
 				height: 600,
 				pxRatio: 1,
-				series: [{}],
-				axes: [{}],
+				series: [
+					{}, // x-axis series
+					{ scale: 'y' } // y-axis series
+				],
+				axes: [
+					{ scale: 'x' },
+					{ scale: 'y' }
+				],
 				scales: { x: {}, y: {} },
-				cursor: { show: true }
+				cursor: { 
+					show: true,
+					drag: { x: true, y: false },
+					points: { show: true, size: 5 }
+				}
 			},
 			data: [],
 			root: container,
@@ -169,6 +179,13 @@ describe('Module Integration Tests - Simplified', () => {
 			setSelect: vi.fn(),
 			setPxRatio: vi.fn(),
 			syncRect: vi.fn(),
+			// Add series property for axes initialization
+			series: [
+				{}, // x-axis series
+				{ scale: 'y' } // y-axis series
+			],
+			// Add cursor manager reference
+			cursor: null, // Will be set by test
 		};
 		
 		vi.clearAllMocks();
@@ -293,18 +310,27 @@ describe('Module Integration Tests - Simplified', () => {
 		});
 
 		it('should coordinate cursor updates with legend', () => {
-			// Initialize cursor and legend
-			cursor.initCursor(mockUplot.opts);
-			legend.initLegend(mockUplot.opts);
+			// Initialize cursor and legend with proper parameters
+			const series = mockUplot.opts.series;
+			const activeIdxs = [0, 1];
+			const mode = 1;
+			const over = mockUplot.over;
+			const focus = { prox: 1 };
+			
+			cursor.initCursor(mockUplot.opts, series, activeIdxs, mode, over, focus);
+			legend.initLegend(mockUplot.opts, series, activeIdxs, mode, mockUplot.root, cursor, {});
 			
 			// Update cursor position
 			cursor.setCursor({ left: 100, top: 200 });
 			
-			expect(cursor.left).toBe(100);
-			expect(cursor.top).toBe(200);
+			expect(cursor.cursor.left).toBe(100);
+			expect(cursor.cursor.top).toBe(200);
 		});
 
 		it('should handle rendering coordination', () => {
+			// Set proper layout dimensions first
+			layout.calcSize(800, 600);
+			
 			// Initialize renderer
 			renderer.initCanvas(mockUplot.opts);
 			
@@ -317,6 +343,10 @@ describe('Module Integration Tests - Simplified', () => {
 		it('should coordinate axis operations with scales', () => {
 			// Initialize axes and scales
 			scales.initScales(mockUplot.opts);
+			
+			// Ensure series is available on uplot instance
+			mockUplot.series = mockUplot.opts.series;
+			
 			axes.initAxes(mockUplot.opts);
 			
 			// Verify axes can access scale information
@@ -339,10 +369,21 @@ describe('Module Integration Tests - Simplified', () => {
 		});
 
 		it('should handle module cleanup properly', () => {
+			const series = mockUplot.opts.series;
+			const activeIdxs = [0, 1];
+			const mode = 1;
+			const over = mockUplot.over;
+			const focus = { prox: 1 };
+			
+			// Initialize cursor first to get cursor configuration
+			cursor.initCursor(mockUplot.opts, series, activeIdxs, mode, over, focus);
+			
+			// Set cursor configuration reference for events
+			mockUplot.cursor = cursor.cursor;
+			
 			// Initialize modules
 			events.initEvents(mockUplot.opts);
-			cursor.initCursor(mockUplot.opts);
-			legend.initLegend(mockUplot.opts);
+			legend.initLegend(mockUplot.opts, series, activeIdxs, mode, mockUplot.root, cursor, {});
 			
 			// Cleanup
 			events.destroy();
@@ -402,6 +443,18 @@ describe('Module Integration Tests - Simplified', () => {
 		});
 
 		it('should coordinate mouse events through the event system', () => {
+			// Initialize cursor first to get cursor configuration
+			const series = mockUplot.opts.series;
+			const activeIdxs = [0, 1];
+			const mode = 1;
+			const over = mockUplot.over;
+			const focus = { prox: 1 };
+			
+			cursor.initCursor(mockUplot.opts, series, activeIdxs, mode, over, focus);
+			
+			// Set cursor configuration reference for events
+			mockUplot.cursor = cursor.cursor;
+			
 			// Initialize event handling
 			events.initEvents(mockUplot.opts);
 			
@@ -457,6 +510,19 @@ describe('Module Integration Tests - Simplified', () => {
 
 		it('should manage event listeners properly', () => {
 			const events = new EventManager(mockUplot);
+			const cursor = new CursorManager(mockUplot);
+			
+			const series = mockUplot.opts.series;
+			const activeIdxs = [0, 1];
+			const mode = 1;
+			const over = mockUplot.over;
+			const focus = { prox: 1 };
+			
+			// Initialize cursor first to get cursor configuration
+			cursor.initCursor(mockUplot.opts, series, activeIdxs, mode, over, focus);
+			
+			// Set cursor configuration reference for events
+			mockUplot.cursor = cursor.cursor;
 			
 			// Initialize events
 			events.initEvents(mockUplot.opts);

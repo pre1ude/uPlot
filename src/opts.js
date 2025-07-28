@@ -381,17 +381,24 @@ function cursorPointShow(self, si) {
 
 function cursorPointFill(self, si) {
 	let sp = self.series[si].points;
-	return sp._fill || sp._stroke;
+	return sp ? (sp._fill || sp._stroke) : null;
 }
 
 function cursorPointStroke(self, si) {
 	let sp = self.series[si].points;
-	return sp._stroke || sp._fill;
+	return sp ? (sp._stroke || sp._fill) : null;
 }
 
 function cursorPointSize(self, si) {
-	let sp = self.series[si].points;
-	return sp.size;
+	let series = self.series && self.series[si];
+	let sp = series && series.points;
+	return sp && sp.size ? sp.size : 5; // Default size if points not configured
+}
+
+function cursorPointWidth(self, si, size) {
+	let series = self.series && self.series[si];
+	let sp = series && series.points;
+	return sp && sp.width ? sp.width : 0; // Default width if points not configured
 }
 
 const moveTuple = [0,0];
@@ -424,7 +431,7 @@ export const cursorOpts = {
 		one:    false,
 		show:   cursorPointShow,
 		size:   cursorPointSize,
-		width:  0,
+		width:  cursorPointWidth,
 		stroke: cursorPointStroke,
 		fill:   cursorPointFill,
 	},

@@ -217,7 +217,7 @@ export class CursorManager {
 	}
 
 	addCursorPt(s, i, over, plotWidCss, plotHgtCss) {
-		if (!this.showCursor) return;
+		if (!this.showCursor || !this.cursor || !this.cursor.points) return;
 		
 		let pt = null;
 
@@ -461,5 +461,14 @@ export class CursorManager {
 		this.cursorPtsTop = [];
 		this.cursor = null;
 		this.rect = null;
+	}
+
+	/**
+	 * Move cursor to specified position
+	 */
+	move(uplot, left, top) {
+		// Default implementation - just return the coordinates
+		// This can be overridden by cursor configuration
+		return [left, top];
 	}
 }

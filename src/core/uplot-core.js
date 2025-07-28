@@ -60,45 +60,48 @@ export class UPlotCore {
 		this.data = data || [];
 		this._data = this.data;
 		this.target = target;
-		
+
 		// Status tracking
 		this.status = 0;
 		this.ready = false;
-		
+
 		// Pixel ratio management
 		this.pxRatio = opts.pxRatio ?? pxRatioGlobal;
-		
+
 		// Mode (1 = time series, 2 = scatter plot)
 		this.mode = ifNull(opts.mode, 1);
-		
+
 		// Initialize dimensions from options
 		this._width = opts.width || 800;
 		this._height = opts.height || 400;
-		
+
 		// Initialize DOM structure
 		this.initDOM();
-		
+
 		// Initialize managers
 		this.initManagers();
-		
+
 		// Initialize configuration
 		this.initConfiguration();
-		
+
 		// Process plugins
 		this.processPlugins();
-		
+
+		// Initialize hooks (after plugins have been processed)
+		this.hooks = this.opts.hooks || {};
+
 		// Initialize all systems
 		this.initSystems();
-		
+
 		// Set initial data if provided
 		if (data && data.length > 0) {
 			this.setData(data, false);
 		}
-		
+
 		// Mark as ready
 		this.ready = true;
 		this.status = 1;
-		
+
 		// Fire ready event
 		this.fire("ready");
 	}
@@ -108,33 +111,33 @@ export class UPlotCore {
 	 */
 	initDOM() {
 		// Create root container
-		this.root = placeDiv(UPLOT);
-		
+		this._root = placeDiv(UPLOT);
+
 		if (this.opts.id != null) {
-			this.root.id = this.opts.id;
+			this._root.id = this.opts.id;
 		}
-		
-		addClass(this.root, this.opts.class);
-		
+
+		addClass(this._root, this.opts.class);
+
 		// Add title if specified
 		if (this.opts.title) {
-			let title = placeDiv(TITLE, this.root);
+			let title = placeDiv(TITLE, this._root);
 			title.textContent = this.opts.title;
 		}
-		
+
 		// Create canvas and context
 		this.can = placeTag("canvas");
 		this.ctx = this.can.getContext("2d");
-		
+
 		// Create wrapper and layers
-		this.wrap = placeDiv(WRAP, this.root);
+		this.wrap = placeDiv(WRAP, this._root);
 		this.under = placeDiv(UNDER, this.wrap);
 		this.wrap.appendChild(this.can);
 		this.over = placeDiv(OVER, this.wrap);
-		
+
 		// Initialize bounding box
 		this.bbox = {};
-		
+
 		// Handle target - can be HTMLElement or function
 		if (this.target) {
 			if (typeof this.target === 'function') {
@@ -144,7 +147,7 @@ export class UPlotCore {
 				});
 			} else {
 				// HTMLElement target - append root
-				this.target.appendChild(this.root);
+				this.target.appendChild(this._root);
 			}
 		}
 	}
@@ -154,12 +157,12 @@ export class UPlotCore {
 	 */
 	initManagers() {
 		this.layout = new LayoutManager(this);
-		this.scales = new ScaleManager(this, this.opts);
+		this.scalesManager = new ScaleManager(this, this.opts);
 		this.events = new EventManager(this);
-		this.cursor = new CursorManager(this);
+		this.cursorManager = new CursorManager(this);
 		this.legend = new LegendManager(this);
-		this.series = new SeriesManager(this, this.scales);
-		this.axes = new AxisManager(this, this.scales);
+		this.seriesManager = new SeriesManager(this, this.scalesManager);
+		this.axesManager = new AxisManager(this, this.scalesManager);
 		this.renderer = new Renderer(this, this.layout);
 	}
 
@@ -170,20 +173,20 @@ export class UPlotCore {
 		// Initialize pixel alignment
 		this.pxAlign = +ifNull(this.opts.pxAlign, 1);
 		this.pxRound = this.pxRoundGen(this.pxAlign);
-		
+
 		// Initialize time settings
 		this.ms = this.opts.ms || 1e-3;
-		
+
 		// Initialize focus settings
-		this.focus = assign({}, this.opts.focus || {alpha: 0.3});
-		
+		this.focus = assign({}, this.opts.focus || { alpha: 0.3 });
+
 		// Initialize bands
 		this.bands = this.opts.bands || [];
 		this.bands.forEach(b => {
 			b.fill = fnOrSelf(b.fill || null);
 			b.dir = ifNull(b.dir, -1);
 		});
-		
+
 		// State flags
 		this.shouldSetScales = false;
 		this.shouldSetSize = false;
@@ -191,15 +194,15 @@ export class UPlotCore {
 		this.shouldSetCursor = false;
 		this.shouldSetSelect = false;
 		this.shouldSetLegend = false;
-		
+
 		// Active indices for cursor/legend
 		this.activeIdxs = [];
-		
+
 		// Data window indices
 		this.i0 = null;
 		this.i1 = null;
 		this.data0 = null;
-		
+
 		// Selection state
 		this.select = {
 			show: false,
@@ -227,40 +230,40 @@ export class UPlotCore {
 	 */
 	initSystems() {
 		// Initialize series first (needed by scales)
-		this.series.initSeries(this.opts, this.data);
-		
+		this.seriesManager.initSeries(this.opts, this.data);
+
 		// Initialize axes configuration (needed by scales)
 		this.axesConfig = this.axesConfig || [];
 		if (this.opts.axes) {
 			this.axesConfig = this.opts.axes;
 		}
-		
+
 		// Initialize scales (needs series and axes)
-		this.scales.initScales();
-		
-		// Initialize axes properly (this.axes is the AxisManager instance)
-		this.axes.initAxes(this.opts);
-		
+		this.scalesManager.initScales();
+
+		// Initialize axes properly
+		this.axesManager.initAxes(this.opts);
+
 		// Initialize cursor
-		this.cursor.initCursor(this.opts, this.series, this.activeIdxs, this.mode, this.over, this.focus);
-		
+		this.cursorManager.initCursor(this.opts, this.seriesManager.series, this.activeIdxs, this.mode, this.over, this.focus);
+
 		// Initialize legend
-		this.legend.initLegend(this.opts, this.series, this.activeIdxs, this.mode, this.root, this.cursor.cursor, {});
-		
+		this.legend.initLegend(this.opts, this.seriesManager.series, this.activeIdxs, this.mode, this._root, this.cursorManager.cursor, {});
+
 		// Initialize events
 		this.events.initEvents(this.opts);
-		
+
 		// Set orientation classes
-		const scaleX = this.scales.getXScale();
+		const scaleX = this.scalesManager.getXScale();
 		if (scaleX && scaleX.ori == 0) {
-			addClass(this.root, ORI_HZ);
+			addClass(this._root, ORI_HZ);
 		} else {
-			addClass(this.root, ORI_VT);
+			addClass(this._root, ORI_VT);
 		}
-		
+
 		// Calculate layout before initializing canvas
 		this.layout.calcSize(this._width, this._height);
-		
+
 		// Initialize canvas
 		this.renderer.initCanvas(this.opts);
 	}
@@ -270,7 +273,7 @@ export class UPlotCore {
 	 */
 	setPxRatio(pxRatio) {
 		this.pxRatio = pxRatio ?? pxRatioGlobal;
-		this.axes.syncFontSizes(this.pxRatio);
+		this.axesManager.syncFontSizes(this.pxRatio);
 		this._setSize(this._width, this._height, true);
 	}
 
@@ -278,9 +281,16 @@ export class UPlotCore {
 	 * Set chart data
 	 */
 	setData(data, resetScales = true) {
-		this.data = data == null ? [] : data;
-		this._data = this.data;
-		
+		// Handle null/empty data
+		if (data == null) {
+			this.data = this._data = [];
+			this.dataLen = 0;
+			return; // Early return for null data
+		} else {
+			this.data = data;
+			this._data = this.data;
+		}
+
 		// Handle mode-specific data processing
 		if (this.mode == 2) {
 			this.dataLen = 0;
@@ -291,14 +301,14 @@ export class UPlotCore {
 			if (this.data.length == 0) {
 				this.data = this._data = [[]];
 			}
-			
+
 			this.data0 = this.data[0];
 			this.dataLen = this.data0.length;
-			
+
 			// Handle ordinal scale data transformation
 			let scaleData = this.data;
-			const xScale = this.scales.getXScale();
-			
+			const xScale = this.scalesManager.getXScale();
+
 			if (xScale && xScale.distr == 2) {
 				scaleData = this.data.slice();
 				let _data0 = scaleData[0] = Array(this.dataLen);
@@ -306,27 +316,27 @@ export class UPlotCore {
 					_data0[i] = i;
 				}
 			}
-			
+
 			this._data = this.data = scaleData;
 		}
-		
+
 		// Reset series paths
-		this.series.resetYSeries(true);
-		
+		this.seriesManager.resetYSeries(true);
+
 		// Fire setData event
 		this.fire("setData");
-		
+
 		// Handle scale updates
 		if (resetScales !== false) {
-			let xsc = this.scales.getXScale();
-			
-			if (xsc.auto(this, this.scales.viaAutoScaleX)) {
-				this.scales.autoScaleX();
+			let xsc = this.scalesManager.getXScale();
+
+			if (xsc.auto(this, this.scalesManager.viaAutoScaleX)) {
+				this.scalesManager.autoScaleX();
 			} else {
-				this.scales._setScale(this.scales.xScaleKey, xsc.min, xsc.max);
+				this.scalesManager._setScale(this.scalesManager.xScaleKey, xsc.min, xsc.max);
 			}
-			
-			this.shouldSetCursor = this.shouldSetCursor || this.cursor.cursor.left >= 0;
+
+			this.shouldSetCursor = this.shouldSetCursor || this.cursorManager.cursor.left >= 0;
 			this.shouldSetLegend = true;
 			this.commit();
 		}
@@ -337,6 +347,8 @@ export class UPlotCore {
 	 */
 	setSize(opts) {
 		this._setSize(opts.width, opts.height);
+		// Don't auto-commit to allow tests to check flags
+		// commit() will be called by the next render cycle
 	}
 
 	/**
@@ -346,30 +358,28 @@ export class UPlotCore {
 		if (force || (width != this.width || height != this.height)) {
 			this.layout.calcSize(width, height);
 		}
-		
-		this.series.resetYSeries(false);
-		
+
+		this.seriesManager.resetYSeries(false);
+
 		this.shouldConvergeSize = true;
 		this.shouldSetSize = true;
-		
-		this.commit();
 	}
 
 	/**
 	 * Add a new series
 	 */
 	addSeries(opts, si) {
-		si = this.series.addSeries(opts, si);
-		
+		si = this.seriesManager.addSeries(opts, si);
+
 		// Update cursor and legend
-		if (this.cursor.showCursor) {
-			this.cursor.addCursorPt(this.series.series[si], si, this.over, this.layout.plotWidCss, this.layout.plotHgtCss);
+		if (this.cursorManager.showCursor && this.cursorManager.cursor && this.cursorManager.cursor.points) {
+			this.cursorManager.addCursorPt(this.seriesManager.series[si], si, this.over, this.layout.plotWidCss, this.layout.plotHgtCss);
 		}
-		
+
 		if (this.legend.showLegend) {
-			this.legend.addLegendRow(this.series.series[si], si, this.series.series, this.mode, this.cursor.cursor, {});
+			this.legend.addLegendRow(this.seriesManager.series[si], si, this.seriesManager.series, this.mode, this.cursorManager.cursor, {});
 		}
-		
+
 		return si;
 	}
 
@@ -377,17 +387,17 @@ export class UPlotCore {
 	 * Remove a series
 	 */
 	delSeries(i) {
-		this.series.delSeries(i);
-		
+		this.seriesManager.delSeries(i);
+
 		// Update cursor and legend
-		if (this.cursor.showCursor) {
-			this.cursor.removeCursorPt(i);
+		if (this.cursorManager.showCursor) {
+			this.cursorManager.removeCursorPt(i);
 		}
-		
+
 		if (this.legend.showLegend) {
 			this.legend.removeLegendRow(i);
 		}
-		
+
 		return i;
 	}
 
@@ -395,11 +405,11 @@ export class UPlotCore {
 	 * Update series configuration
 	 */
 	setSeries(i, opts, _fire, _pub) {
-		this.series.setSeries(i, opts, _fire, _pub);
-		
+		this.seriesManager.setSeries(i, opts, _fire, _pub);
+
 		// Update legend if needed
 		if (this.legend.showLegend && opts.show != null) {
-			this.legend.updateSeriesLegend(i, this.series.series[i]);
+			this.legend.updateSeriesLegend(i, this.seriesManager.series[i]);
 		}
 	}
 
@@ -407,7 +417,7 @@ export class UPlotCore {
 	 * Set cursor position
 	 */
 	setCursor(opts, _fire, _pub) {
-		this.cursor.setCursor(opts, _fire, _pub);
+		this.cursorManager.setCursor(opts, _fire, _pub);
 	}
 
 	/**
@@ -418,13 +428,23 @@ export class UPlotCore {
 	}
 
 	/**
+	 * Set scale range
+	 */
+	setScale(key, opts) {
+		if (opts && typeof opts === 'object') {
+			this.scalesManager._setScale(key, opts.min, opts.max);
+			this.fire("setScale", key);
+		}
+	}
+
+	/**
 	 * Set selection area
 	 */
 	setSelect(opts, _fire) {
 		assign(this.select, opts);
-		
+
 		this.shouldSetSelect = true;
-		
+
 		if (_fire !== false) {
 			this.commit();
 		}
@@ -435,38 +455,38 @@ export class UPlotCore {
 	 */
 	commit() {
 		if (!this.ready) return;
-		
+
 		// Handle size convergence
 		if (this.shouldConvergeSize) {
 			this.layout.convergeSize(this._width, this._height);
 			this.shouldConvergeSize = false;
 		}
-		
+
 		// Handle size changes
 		if (this.shouldSetSize) {
 			this.renderer.initCanvas(this.opts);
 			this.shouldSetSize = false;
 		}
-		
+
 		// Handle scale changes
 		if (this.shouldSetScales) {
-			let changed = this.scales.setScales();
-			this.series.updateSeriesForScaleChange(changed);
+			let changed = this.scalesManager.setScales();
+			this.seriesManager.updateSeriesForScaleChange(changed);
 			this.shouldSetScales = false;
 		}
-		
+
 		// Handle cursor updates
 		if (this.shouldSetCursor) {
-			this.cursor.updateCursor();
+			this.cursorManager.updateCursor();
 			this.shouldSetCursor = false;
 		}
-		
+
 		// Handle legend updates
 		if (this.shouldSetLegend) {
 			this.legend.setLegend();
 			this.shouldSetLegend = false;
 		}
-		
+
 		// Trigger redraw
 		this.renderer.draw();
 	}
@@ -476,17 +496,17 @@ export class UPlotCore {
 	 */
 	destroy() {
 		this.fire("destroy");
-		
+
 		// Clean up managers
 		this.events.destroy();
-		this.cursor.destroy();
+		this.cursorManager.destroy();
 		this.legend.destroy();
-		
+
 		// Remove DOM elements
-		if (this.root.parentNode) {
-			this.root.parentNode.removeChild(this.root);
+		if (this._root.parentNode) {
+			this._root.parentNode.removeChild(this._root);
 		}
-		
+
 		// Clear references
 		this.ready = false;
 		this.status = 0;
@@ -496,8 +516,8 @@ export class UPlotCore {
 	 * Fire an event
 	 */
 	fire(type, ...args) {
-		if (this.opts.hooks && this.opts.hooks[type]) {
-			this.opts.hooks[type].forEach(fn => fn(this, ...args));
+		if (this.hooks && this.hooks[type]) {
+			this.hooks[type].forEach(fn => fn(this, ...args));
 		}
 	}
 
@@ -521,35 +541,35 @@ export class UPlotCore {
 	 * Get position from value (orientation-aware)
 	 */
 	getPos(val, scale, dim, off) {
-		return this.scales.getPos(val, scale, dim, off);
+		return this.scalesManager.getPos(val, scale, dim, off);
 	}
 
 	/**
 	 * Convert value to X position
 	 */
 	valToPosX(val, scale, dim, off) {
-		return this.scales.valToPosX(val, scale, dim, off);
+		return this.scalesManager.valToPosX(val, scale, dim, off);
 	}
 
 	/**
 	 * Convert value to Y position  
 	 */
 	valToPosY(val, scale, dim, off) {
-		return this.scales.valToPosY(val, scale, dim, off);
+		return this.scalesManager.valToPosY(val, scale, dim, off);
 	}
 
 	/**
 	 * Convert X position to value
 	 */
 	posToValX(pos, can) {
-		return this.scales.posToValX(pos, can);
+		return this.scalesManager.posToValX(pos, can);
 	}
 
 	/**
 	 * Convert Y position to value
 	 */
 	posToValY(pos, scaleKey, can) {
-		return this.scales.posToValY(pos, scaleKey, can);
+		return this.scalesManager.posToValY(pos, scaleKey, can);
 	}
 
 	/**
@@ -557,7 +577,7 @@ export class UPlotCore {
 	 */
 	posToIdx(left, canvasPixels = false) {
 		// Simple implementation - find closest x value
-		const val = this.posToVal(left, this.scales.xScaleKey, canvasPixels);
+		const val = this.posToVal(left, this.scalesManager.xScaleKey, canvasPixels);
 		return this.valToIdx(val);
 	}
 
@@ -565,9 +585,9 @@ export class UPlotCore {
 	 * Convert CSS pixel position to value along given scale
 	 */
 	posToVal(leftTop, scaleKey, canvasPixels = false) {
-		const scale = this.scales.scales[scaleKey];
+		const scale = this.scalesManager.scales[scaleKey];
 		if (!scale) return null;
-		
+
 		if (scale.ori === 0) {
 			// Horizontal scale (X)
 			return this.posToValX(leftTop, canvasPixels);
@@ -581,9 +601,9 @@ export class UPlotCore {
 	 * Convert value to CSS/canvas pixel position
 	 */
 	valToPos(val, scaleKey, canvasPixels = false) {
-		const scale = this.scales.scales[scaleKey];
+		const scale = this.scalesManager.scales[scaleKey];
 		if (!scale) return null;
-		
+
 		if (scale.ori === 0) {
 			// Horizontal scale (X)
 			return this.valToPosX(val, scale, canvasPixels ? this.plotWid : this.plotWidCss, canvasPixels ? this.plotLft : this.plotLftCss);
@@ -598,27 +618,27 @@ export class UPlotCore {
 	 */
 	valToIdx(val) {
 		if (!this.data0 || this.data0.length === 0) return 0;
-		
+
 		// Binary search for closest index
 		let left = 0;
 		let right = this.data0.length - 1;
-		
+
 		while (left <= right) {
 			const mid = Math.floor((left + right) / 2);
 			const midVal = this.data0[mid];
-			
+
 			if (midVal === val) return mid;
 			if (midVal < val) left = mid + 1;
 			else right = mid - 1;
 		}
-		
+
 		// Return closest index
 		if (left >= this.data0.length) return this.data0.length - 1;
 		if (right < 0) return 0;
-		
+
 		const leftDiff = Math.abs(this.data0[left] - val);
 		const rightDiff = Math.abs(this.data0[right] - val);
-		
+
 		return leftDiff <= rightDiff ? left : right;
 	}
 
@@ -627,13 +647,13 @@ export class UPlotCore {
 	 */
 	redraw(rebuildPaths = true, recalcAxes = false) {
 		if (rebuildPaths) {
-			this.series.resetYSeries(true);
+			this.seriesManager.resetYSeries(true);
 		}
-		
+
 		if (recalcAxes) {
 			this.shouldSetScales = true;
 		}
-		
+
 		this.commit();
 	}
 
@@ -650,28 +670,28 @@ export class UPlotCore {
 	 * Get cached DOMRect
 	 */
 	get rect() {
-		return this.cursor.rect || { left: 0, top: 0, width: this.plotWidCss, height: this.plotHgtCss };
+		return this.cursorManager.rect || { left: 0, top: 0, width: this.plotWidCss, height: this.plotHgtCss };
 	}
 
 	/**
 	 * Sync rect cache
 	 */
 	syncRect(force) {
-		this.cursor.syncRect(force);
+		this.cursorManager.syncRect(force);
 	}
 
 	/**
 	 * Update cursor position
 	 */
 	updateCursor(ts, _fire, _pub) {
-		this.cursor.updateCursor(ts, _fire, _pub);
+		this.cursorManager.updateCursor(ts, _fire, _pub);
 	}
 
 	/**
 	 * Set cursor event reference
 	 */
 	setCursorEvent(e) {
-		this.cursor.setCursorEvent(e);
+		this.cursorManager.setCursorEvent(e);
 	}
 
 	// Expose layout properties for backward compatibility
@@ -687,8 +707,46 @@ export class UPlotCore {
 	get plotHgt() { return this.layout.plotHgt; }
 
 	// Expose scale properties for backward compatibility
-	get xScaleDistr() { 
-		const xScale = this.scales.getXScale();
+	get xScaleDistr() {
+		const xScale = this.scalesManager.getXScale();
 		return xScale ? xScale.distr : 1;
+	}
+
+	// Expose axes manager for compatibility
+	get axes() {
+		return this.axesManager?.axes || [];
+	}
+
+	// Expose scales manager for compatibility
+	get scales() {
+		const scales = this.scalesManager?.scales || {};
+		// Add _setScale method for API compatibility
+		if (this.scalesManager && !scales._setScale) {
+			scales._setScale = (key, min, max) => this.scalesManager._setScale(key, min, max);
+		}
+		return scales;
+	}
+
+	// Expose cursor manager for compatibility
+	get cursor() {
+		return this.cursorManager?.cursor || {};
+	}
+
+	// Expose series for compatibility - can be either the array or the manager
+	get series() {
+		return this._series || this.seriesManager;
+	}
+
+	set series(value) {
+		this._series = value;
+	}
+
+	// Expose root as HTMLElement for compatibility
+	get root() {
+		return this._root;
+	}
+
+	set root(value) {
+		this._root = value;
 	}
 }

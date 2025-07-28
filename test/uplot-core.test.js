@@ -285,6 +285,7 @@ describe('UPlotCore', () => {
 			const opts = { 
 				width: 800, 
 				height: 600,
+				cursor: { show: false }, // Disable cursor for these tests
 				series: [
 					{},
 					{ label: 'Series 1' }
@@ -542,22 +543,34 @@ describe('UPlotCore', () => {
 
 		it('should delegate valToPosX to scales manager', () => {
 			const valToPosXSpy = vi.spyOn(uplot.scales, 'valToPosX');
+			const xScale = uplot.scales.scales.x;
+			// Set up scale with proper min/max for testing
+			xScale._min = 0;
+			xScale._max = 100;
 			
-			uplot.valToPosX(10, {}, 800, 0);
+			uplot.valToPosX(10, xScale, 800, 0);
 			
-			expect(valToPosXSpy).toHaveBeenCalledWith(10, {}, 800, 0);
+			expect(valToPosXSpy).toHaveBeenCalledWith(10, xScale, 800, 0);
 		});
 
 		it('should delegate valToPosY to scales manager', () => {
 			const valToPosYSpy = vi.spyOn(uplot.scales, 'valToPosY');
+			const yScale = uplot.scales.scales.y;
+			// Set up scale with proper min/max for testing
+			yScale._min = 0;
+			yScale._max = 100;
 			
-			uplot.valToPosY(20, {}, 600, 0);
+			uplot.valToPosY(20, yScale, 600, 0);
 			
-			expect(valToPosYSpy).toHaveBeenCalledWith(20, {}, 600, 0);
+			expect(valToPosYSpy).toHaveBeenCalledWith(20, yScale, 600, 0);
 		});
 
 		it('should delegate posToValX to scales manager', () => {
 			const posToValXSpy = vi.spyOn(uplot.scales, 'posToValX');
+			// Set up scale with proper min/max for testing
+			const xScale = uplot.scales.scales.x;
+			xScale._min = 0;
+			xScale._max = 100;
 			
 			uplot.posToValX(100, true);
 			
@@ -566,6 +579,10 @@ describe('UPlotCore', () => {
 
 		it('should delegate posToValY to scales manager', () => {
 			const posToValYSpy = vi.spyOn(uplot.scales, 'posToValY');
+			// Set up scale with proper min/max for testing
+			const yScale = uplot.scales.scales.y;
+			yScale._min = 0;
+			yScale._max = 100;
 			
 			uplot.posToValY(200, 'y', false);
 			

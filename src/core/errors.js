@@ -161,6 +161,11 @@ export class ErrorReporter {
 		}
 	}
 	
+	// Alias for backward compatibility
+	reportError(error) {
+		return this.report(error);
+	}
+	
 	getErrors(moduleName = null) {
 		if (!moduleName) {
 			return this.errors;

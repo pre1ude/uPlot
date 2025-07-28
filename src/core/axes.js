@@ -654,4 +654,11 @@ export class AxisManager {
 	syncFontSizes(pxRatio) {
 		this.axes.forEach(axis => syncFontSize(axis, pxRatio));
 	}
+
+	/**
+	 * Get the number of axes
+	 */
+	getAxesCount() {
+		return this.axes.length;
+	}
 }

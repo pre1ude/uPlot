@@ -15,6 +15,7 @@ vi.mock('../src/utils', () => ({
 	retNull: () => null,
 	clamp: (val, min, max) => Math.min(Math.max(val, min), max),
 	roundDec: (val, dec) => Math.round(val * Math.pow(10, dec)) / Math.pow(10, dec),
+	inf: Infinity,
 	EMPTY_OBJ: {}
 }));
 
