@@ -294,7 +294,7 @@ export class UPlotCore {
 		// Handle mode-specific data processing
 		if (this.mode == 2) {
 			this.dataLen = 0;
-			for (let i = 1; i < this.series.series.length; i++) {
+			for (let i = 1; i < this.seriesManager.series.length; i++) {
 				this.dataLen += this.data[i][0].length;
 			}
 		} else {

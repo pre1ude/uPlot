@@ -9,4 +9,4 @@ console.log(Object.getOwnPropertyNames(SeriesManager));
 
 // Check if resetYSeries is defined
 console.log('\nresetYSeries method:', SeriesManager.prototype.resetYSeries);
-console.log('getSeriesCount method:', SeriesManager.prototype.getSeriesCount);
+// console.log('getSeriesCount method:', SeriesManager.prototype.getSeriesCount);

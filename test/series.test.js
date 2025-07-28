@@ -381,7 +381,7 @@ describe('SeriesManager', () => {
 		});
 
 		it('should get series count', () => {
-			expect(seriesManager.getSeriesCount()).toBe(3);
+			expect(seriesManager.series.length).toBe(3);
 		});
 
 		it('should check if series is visible', () => {

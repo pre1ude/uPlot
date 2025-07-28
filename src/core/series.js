@@ -125,9 +125,9 @@ export class SeriesManager {
 			this.uplot.seriesManager = this;
 			
 			// Add manager methods to the series array for backward compatibility
-			this.uplot.series.getSeriesCount = () => this.series.length;
-			this.uplot.series.getSeries = (i) => this.series[i];
-			this.uplot.series.uplot = this.uplot;
+			// this.uplot.series.getSeriesCount = () => this.series.length;
+			// this.uplot.series.getSeries = (i) => this.series[i];
+			// this.uplot.series.uplot = this.uplot;
 			
 			return this.series;
 		}).call(this, opts, data);
@@ -478,13 +478,6 @@ export class SeriesManager {
 	 */
 	getAllSeries() {
 		return this.series;
-	}
-
-	/**
-	 * Get series count
-	 */
-	getSeriesCount() {
-		return this.series.length;
 	}
 
 	/**

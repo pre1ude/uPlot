@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import uPlot from '../src/uPlot.js';
 
-// Mock DOM environment
+/* // Mock DOM environment
 const mockContext = {
 	canvas: null, // Will be set below
 	clearRect: vi.fn(),
@@ -55,8 +55,8 @@ const mockCanvas = {
 
 // Set canvas reference in context
 mockContext.canvas = mockCanvas;
-
-global.document = {
+ */
+/* global.document = {
 	createElement: vi.fn((tag) => {
 		if (tag === 'canvas') {
 			return mockCanvas;
@@ -76,51 +76,19 @@ global.document = {
 		};
 	}),
 	createTextNode: vi.fn(() => ({ textContent: '' })),
-};
+}; */
 
-global.window = {
+/* global.window = {
 	devicePixelRatio: 1,
 	addEventListener: vi.fn(),
 	removeEventListener: vi.fn(),
-};
-
-global.HTMLElement = class HTMLElement {
-	constructor() {
-		this.style = {};
-		this.children = [];
-		this.classList = {
-			add: vi.fn(),
-			remove: vi.fn(),
-			contains: vi.fn(),
-		};
-	}
-	
-	appendChild(child) {
-		this.children.push(child);
-		return child;
-	}
-	
-	insertBefore(child, before) {
-		this.children.push(child);
-		return child;
-	}
-	
-	remove() {
-		// Mock remove
-	}
-	
-	addEventListener() {}
-	removeEventListener() {}
-	getBoundingClientRect() {
-		return { left: 0, top: 0, width: 800, height: 600 };
-	}
-};
+}; */
 
 describe('API Compatibility Test Suite', () => {
 	let container;
 	
 	beforeEach(() => {
-		container = new HTMLElement();
+		container = document.createElement('div');
 	});
 	
 	afterEach(() => {
@@ -325,7 +293,7 @@ describe('API Compatibility Test Suite', () => {
 
 		describe('setScale method', () => {
 			it('should maintain identical behavior', () => {
-				const setScaleSpy = vi.spyOn(chart.scales, '_setScale');
+				const setScaleSpy = vi.spyOn(chart.scalesManager, '_setScale');
 				
 				chart.setScale('x', { min: 0, max: 10 });
 				

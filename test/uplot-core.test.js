@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { UPlotCore } from '../src/core/uplot-core.js';
 
 // Mock DOM environment
-const mockCanvas = {
+/* const mockCanvas = {
 	getContext: vi.fn(() => ({
 		canvas: mockCanvas,
 		clearRect: vi.fn(),
@@ -84,13 +84,13 @@ global.HTMLElement = class HTMLElement {
 	getBoundingClientRect() {
 		return { left: 0, top: 0, width: 800, height: 600 };
 	}
-};
+}; */
 
 describe('UPlotCore', () => {
 	let container;
 	
 	beforeEach(() => {
-		container = new HTMLElement();
+		container = document.createElement('div');
 	});
 	
 	afterEach(() => {
@@ -295,12 +295,12 @@ describe('UPlotCore', () => {
 		});
 
 		it('should add a new series', () => {
-			const initialCount = uplot.series.getSeriesCount();
+			const initialCount = uplot.series.length;
 			const seriesOpts = { label: 'New Series' };
 			
 			const index = uplot.addSeries(seriesOpts);
 			
-			expect(uplot.series.getSeriesCount()).toBe(initialCount + 1);
+			expect(uplot.series.length).toBe(initialCount + 1);
 			expect(typeof index).toBe('number');
 		});
 
@@ -330,11 +330,11 @@ describe('UPlotCore', () => {
 		});
 
 		it('should remove a series', () => {
-			const initialCount = uplot.series.getSeriesCount();
+			const initialCount = uplot.series.length;
 			
 			const index = uplot.delSeries(1);
 			
-			expect(uplot.series.getSeriesCount()).toBe(initialCount - 1);
+			expect(uplot.series.length).toBe(initialCount - 1);
 			expect(index).toBe(1);
 		});
 	});
@@ -357,7 +357,7 @@ describe('UPlotCore', () => {
 		it('should update series configuration', () => {
 			uplot.setSeries(1, { show: false });
 			
-			const series = uplot.series.getSeries(1);
+			const series = uplot.series[1];
 			expect(series.show).toBe(false);
 		});
 

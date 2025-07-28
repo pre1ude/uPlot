@@ -171,9 +171,9 @@ describe('Module Integration Tests', () => {
 			
 			// Verify all managers are initialized
 			expect(uplot.layout).toBeDefined();
-			expect(uplot.scales).toBeDefined();
+			expect(uplot.scalesManager).toBeDefined();
 			expect(uplot.events).toBeDefined();
-			expect(uplot.cursor).toBeDefined();
+			expect(uplot.cursorManager).toBeDefined();
 			expect(uplot.legend).toBeDefined();
 			expect(uplot.series).toBeDefined();
 			expect(uplot.axes).toBeDefined();
@@ -263,8 +263,8 @@ describe('Module Integration Tests', () => {
 			const uplot = new UPlotCore(opts, data, container);
 			
 			expect(uplot.ready).toBe(true);
-			expect(uplot.series.getSeriesCount()).toBe(3);
-			expect(uplot.axes.getAxesCount()).toBe(3);
+			expect(uplot.seriesManager.series.length).toBe(3);
+			expect(uplot.axesManager.getAxesCount()).toBe(3);
 		});
 	});
 
@@ -295,7 +295,7 @@ describe('Module Integration Tests', () => {
 			];
 			
 			// Spy on module methods that should be called during data update
-			const scalesAutoScaleXSpy = vi.spyOn(uplot.scales, 'autoScaleX');
+			const scalesAutoScaleXSpy = vi.spyOn(uplot.scalesManager, 'autoScaleX');
 			const rendererDrawSpy = vi.spyOn(uplot.renderer, 'draw');
 			const fireSpy = vi.spyOn(uplot, 'fire');
 			
@@ -321,10 +321,10 @@ describe('Module Integration Tests', () => {
 			
 			// Update scale range
 			const scaleOpts = { min: 0, max: 100 };
-			const updateScaleSpy = vi.spyOn(uplot.scales, 'updateScale');
+			const updateScaleSpy = vi.spyOn(uplot.scalesManager, 'updateScale');
 			const rendererDrawSpy = vi.spyOn(uplot.renderer, 'draw');
 			
-			uplot.scales.updateScale('y', scaleOpts);
+			uplot.scalesManager.updateScale('y', scaleOpts);
 			
 			expect(updateScaleSpy).toHaveBeenCalledWith('y', scaleOpts);
 			// Renderer should be called for redraw after scale update
@@ -342,8 +342,8 @@ describe('Module Integration Tests', () => {
 			
 			// Add a new series
 			const seriesOpts = { label: 'New Series', stroke: 'green' };
-			const addSeriesSpy = vi.spyOn(uplot.series, 'addSeries');
-			const legendUpdateSpy = vi.spyOn(uplot.legend, 'updateLegend');
+			const addSeriesSpy = vi.spyOn(uplot.seriesManager, 'addSeries');
+			const legendUpdateSpy = vi.spyOn(uplot.legend, 'updateSeriesLegend');
 			
 			const index = uplot.addSeries(seriesOpts);
 			
@@ -361,7 +361,7 @@ describe('Module Integration Tests', () => {
 			uplot.setData(data);
 			
 			const cursorPos = { left: 100, top: 200 };
-			const setCursorSpy = vi.spyOn(uplot.cursor, 'setCursor');
+			const setCursorSpy = vi.spyOn(uplot.cursorManager, 'setCursor');
 			const legendSetSpy = vi.spyOn(uplot.legend, 'setLegend');
 			
 			uplot.setCursor(cursorPos);
@@ -434,7 +434,7 @@ describe('Module Integration Tests', () => {
 			};
 			
 			const eventMouseMoveSpy = vi.spyOn(uplot.events, 'mouseMove');
-			const cursorUpdateSpy = vi.spyOn(uplot.cursor, 'updateCursor');
+			const cursorUpdateSpy = vi.spyOn(uplot.cursorManager, 'updateCursor');
 			
 			// Simulate mouse move
 			uplot.events.mouseMove(mouseEvent, null, 150, 100);
@@ -501,10 +501,10 @@ describe('Module Integration Tests', () => {
 			const uplot = new UPlotCore(opts, [], container);
 			
 			// Verify that modules have references to dependencies
-			expect(uplot.cursor.uplot).toBe(uplot);
+			expect(uplot.cursorManager.uplot).toBe(uplot);
 			expect(uplot.legend.uplot).toBe(uplot);
-			expect(uplot.series.uplot).toBe(uplot);
-			expect(uplot.axes.uplot).toBe(uplot);
+			expect(uplot.seriesManager.uplot).toBe(uplot);
+			expect(uplot.axesManager.uplot).toBe(uplot);
 			expect(uplot.renderer.u).toBe(uplot); // renderer uses 'u' property, not 'uplot'
 		});
 
@@ -548,12 +548,12 @@ describe('Module Integration Tests', () => {
 			const uplot = new UPlotCore(opts, data, container);
 			
 			// Test value-to-position conversion coordination
-			const scalesValToPosXSpy = vi.spyOn(uplot.scales, 'valToPosX');
-			const scalesValToPosYSpy = vi.spyOn(uplot.scales, 'valToPosY');
+			const scalesValToPosXSpy = vi.spyOn(uplot.scalesManager, 'valToPosX');
+			const scalesValToPosYSpy = vi.spyOn(uplot.scalesManager, 'valToPosY');
 			
 			// Use the actual scale objects from the initialized uplot
-			const xScale = uplot.scales.getXScale();
-			const yScale = uplot.scales.getScale('y');
+			const xScale = uplot.scalesManager.getXScale();
+			const yScale = uplot.scalesManager.getScale('y');
 			
 			// Ensure scales are properly initialized with data
 			expect(xScale._min).not.toBeNull();
@@ -589,8 +589,8 @@ describe('Module Integration Tests', () => {
 			const uplot = new UPlotCore(opts, [], container);
 			
 			// Force an error in one module and verify others continue working
-			const originalUpdateCursor = uplot.cursor.updateCursor;
-			uplot.cursor.updateCursor = vi.fn(() => {
+			const originalUpdateCursor = uplot.cursorManager.updateCursor;
+			uplot.cursorManager.updateCursor = vi.fn(() => {
 				throw new Error('Cursor error');
 			});
 			
@@ -600,7 +600,7 @@ describe('Module Integration Tests', () => {
 			}).not.toThrow();
 			
 			// Restore original method
-			uplot.cursor.updateCursor = originalUpdateCursor;
+			uplot.cursorManager.updateCursor = originalUpdateCursor;
 		});
 
 		it('should provide meaningful error context from modules', () => {
@@ -620,7 +620,7 @@ describe('Module Integration Tests', () => {
 			// updateScale doesn't throw for non-existent scales, it just ignores them
 			// Let's test a different error condition
 			expect(() => {
-				uplot.scales.posToVal(null, 'x', false);
+				uplot.scalesManager.posToVal(null, 'x', false);
 			}).toThrow();
 		});
 	});
@@ -644,7 +644,7 @@ describe('Module Integration Tests', () => {
 			
 			// Spy on destroy methods
 			const eventDestroySpy = vi.spyOn(uplot.events, 'destroy');
-			const cursorDestroySpy = vi.spyOn(uplot.cursor, 'destroy');
+			const cursorDestroySpy = vi.spyOn(uplot.cursorManager, 'destroy');
 			const legendDestroySpy = vi.spyOn(uplot.legend, 'destroy');
 			
 			uplot.destroy();
