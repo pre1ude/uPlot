@@ -385,3 +385,28 @@ let opts = {
 - `values` can be:
   - a function with the form `(self, ticks, space) => values` where `ticks` is an array of raw values along the axis' scale, `space` is the determined tick spacing in CSS pixels and `values` is an array of formatted tick labels.
   - array of tick formatters with breakpoints.
+
+
+#### rangeConfig
+
+```js
+const rangeConfig = {
+	min: {
+		pad: 0.2,
+		soft: 0,
+		mode: 3,
+	},
+	max: {
+		pad: 0.2,
+		soft: 0,
+		mode: 3,
+	},
+}
+```
+
+| mode      | 行为描述                                         |
+|-----------|-------------------------------------------------|
+| 0         | 忽略 soft，始终按 padding 计算（min.soft 没有实际作用）。         |
+| 1         | 强软限制：只要数据最小值没低于 soft，坐标轴最小值就是 soft；否则跟随数据。       |
+| 2         | 弱软限制：只要“数据最小值减去 padding”没低于 soft，坐标轴最小值就是 soft，否则跟随数据。       |
+| 3         | 条件软限制（默认）：先按 padding 计算，如果结果低于 soft，则取 soft，否则用 padding 结果。 |

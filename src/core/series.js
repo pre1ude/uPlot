@@ -53,16 +53,16 @@ export class SeriesManager {
 		try {
 			validateRequired(uplot, 'uplot', 'SeriesManager', 'constructor');
 			validateRequired(scaleManager, 'scaleManager', 'SeriesManager', 'constructor');
-			
+
 			this.uplot = uplot;
 			this.scaleManager = scaleManager;
 			this.series = [];
 			this.mode = uplot.mode || 1;
-			
+
 			// Path generators
 			this.linearPath = FEAT_PATHS ? linear() : null;
 			this.pointsPath = FEAT_POINTS ? points() : null;
-			
+
 			// Time formatting functions (will be set during initialization)
 			this._tzDate = null;
 			this._fmtDate = null;
@@ -77,11 +77,11 @@ export class SeriesManager {
 	 * Initialize series from options
 	 */
 	initSeries(opts, data) {
-		return withErrorBoundary('SeriesManager', 'initSeries', function(opts, data) {
+		return withErrorBoundary('SeriesManager', 'initSeries', function (opts, data) {
 			validateRequired(opts, 'opts', 'SeriesManager', 'initSeries');
-			
+
 			const { series: seriesOpts = [], ms = 1e-3 } = opts;
-			
+
 			if (!Array.isArray(seriesOpts)) {
 				throw new UPlotError(
 					'Series options must be an array',
@@ -89,12 +89,12 @@ export class SeriesManager {
 					{ method: 'initSeries', seriesOptsType: typeof seriesOpts, type: ERROR_TYPES.VALIDATION }
 				);
 			}
-			
+
 			// Set up time formatting functions
 			this._tzDate = FEAT_TIME && (opts.tzDate || (ts => new Date(Math.round(ts / ms))));
 			this._fmtDate = FEAT_TIME && (opts.fmtDate || ((ts) => ts ? new Date(ts).toISOString() : ''));
 			this._timeSeriesVal = FEAT_TIME && timeSeriesVal(this._tzDate, timeSeriesStamp('', this._fmtDate));
-			
+
 			// Initialize series array based on mode
 			try {
 				if (this.mode == 1) {
@@ -112,23 +112,23 @@ export class SeriesManager {
 					error
 				);
 			}
-			
+
 			// Process each series
 			this.series.forEach((s, i) => {
 				safeExecute('SeriesManager', `processSeriesConfig[${i}]`, () => {
 					this.processSeriesConfig(s, i);
 				});
 			});
-			
+
 			// Set reference on uplot instance (keep both manager and array)
 			this.uplot.series = this.series;
 			this.uplot.seriesManager = this;
-			
+
 			// Add manager methods to the series array for backward compatibility
 			// this.uplot.series.getSeriesCount = () => this.series.length;
 			// this.uplot.series.getSeries = (i) => this.series[i];
 			// this.uplot.series.uplot = this.uplot;
-			
+
 			return this.series;
 		}).call(this, opts, data);
 	}
@@ -162,18 +162,18 @@ export class SeriesManager {
 		const { mode, _tzDate, _fmtDate, _timeSeriesVal } = this;
 		const { focus, cursor } = this.uplot;
 		const pxAlign = +ifNull(this.uplot.opts?.pxAlign, 1);
-		
+
 		// Configure value and label functions for time/numeric series
 		if (mode == 1 || i > 0) {
 			let isTime = FEAT_TIME && mode == 1 && this.scaleManager.scales[s.scale]?.time;
-			
+
 			let sv = s.value;
-			s.value = isTime ? 
-				(isStr(sv) ? timeSeriesVal(_tzDate, timeSeriesStamp(sv, _fmtDate)) : sv || _timeSeriesVal) : 
+			s.value = isTime ?
+				(isStr(sv) ? timeSeriesVal(_tzDate, timeSeriesStamp(sv, _fmtDate)) : sv || _timeSeriesVal) :
 				sv || numSeriesVal;
 			s.label = s.label || (isTime ? timeSeriesLabel : numSeriesLabel);
 		}
-		
+
 		// Configure rendering properties for non-x-axis series
 		const cursorOnePt = focus?.prox >= 0 && cursor?.points?.one;
 		if (cursorOnePt || i > 0) {
@@ -182,11 +182,11 @@ export class SeriesManager {
 			s.fillTo = fnOrSelf(s.fillTo || seriesFillTo);
 			s.pxAlign = +ifNull(s.pxAlign, pxAlign);
 			s.pxRound = pxRoundGen(s.pxAlign);
-			
+
 			s.stroke = fnOrSelf(s.stroke || null);
 			s.fill = fnOrSelf(s.fill || null);
 			s._stroke = s._fill = s._paths = s._focus = null;
-			
+
 			// Configure points
 			let _ptDia = ptDia(max(1, s.width), 1);
 			let points = s.points = assign({}, {
@@ -198,7 +198,7 @@ export class SeriesManager {
 				_stroke: null,
 				_fill: null,
 			}, s.points);
-			
+
 			points.show = fnOrSelf(points.show);
 			points.filter = fnOrSelf(points.filter);
 			points.fill = fnOrSelf(points.fill);
@@ -206,7 +206,7 @@ export class SeriesManager {
 			points.paths = fnOrSelf(points.paths);
 			points.pxAlign = s.pxAlign;
 		}
-		
+
 		// Ensure points are always configured for non-x-axis series (fallback)
 		if (i > 0 && !s.points) {
 			let _ptDia = ptDia(max(1, s.width || 1), 1);
@@ -232,9 +232,9 @@ export class SeriesManager {
 	addSeries(opts, si) {
 		try {
 			validateRequired(opts, 'opts', 'SeriesManager', 'addSeries');
-			
+
 			si = si == null ? this.series.length : si;
-			
+
 			if (typeof si !== 'number' || si < 0) {
 				throw new UPlotError(
 					`Invalid series index ${si}. Must be a non-negative number`,
@@ -242,7 +242,7 @@ export class SeriesManager {
 					{ method: 'addSeries', seriesIndex: si, type: ERROR_TYPES.VALIDATION }
 				);
 			}
-			
+
 			if (si > this.series.length) {
 				throw new UPlotError(
 					`Series index ${si} is out of bounds. Maximum allowed is ${this.series.length}`,
@@ -250,23 +250,23 @@ export class SeriesManager {
 					{ method: 'addSeries', seriesIndex: si, maxIndex: this.series.length, type: ERROR_TYPES.VALIDATION }
 				);
 			}
-			
+
 			// Apply defaults based on mode
-			opts = this.mode == 1 ? 
-				this.setDefault(opts, si, xSeriesOpts, ySeriesOpts) : 
+			opts = this.mode == 1 ?
+				this.setDefault(opts, si, xSeriesOpts, ySeriesOpts) :
 				this.setDefault(opts, si, {}, xySeriesOpts);
-			
+
 			// Insert series
 			this.series.splice(si, 0, opts);
-			
+
 			// Process configuration
 			this.processSeriesConfig(this.series[si], si);
-			
+
 			// Fire event
 			if (typeof this.uplot.fire === 'function') {
 				this.uplot.fire("addSeries", si);
 			}
-			
+
 			return si;
 		} catch (error) {
 			errorReporter.reportError(new UPlotError(
@@ -283,10 +283,10 @@ export class SeriesManager {
 	 * Remove a series
 	 */
 	delSeries(i) {
-		return withErrorBoundary('SeriesManager', 'delSeries', function(i) {
+		return withErrorBoundary('SeriesManager', 'delSeries', function (i) {
 			validateRequired(i, 'i', 'SeriesManager', 'delSeries');
 			validateType(i, 'number', 'i', 'SeriesManager', 'delSeries');
-			
+
 			if (i < 0 || i >= this.series.length) {
 				throw new UPlotError(
 					`Invalid series index ${i}. Must be between 0 and ${this.series.length - 1}`,
@@ -294,7 +294,7 @@ export class SeriesManager {
 					{ method: 'delSeries', seriesIndex: i, seriesLength: this.series.length, type: ERROR_TYPES.VALIDATION }
 				);
 			}
-			
+
 			if (i === 0 && this.mode === 1) {
 				throw new UPlotError(
 					'Cannot delete the x-axis series (index 0) in mode 1',
@@ -302,10 +302,10 @@ export class SeriesManager {
 					{ method: 'delSeries', seriesIndex: i, mode: this.mode, type: ERROR_TYPES.VALIDATION }
 				);
 			}
-			
+
 			try {
 				this.series.splice(i, 1);
-				
+
 				// Fire event
 				if (typeof this.uplot.fire === 'function') {
 					this.uplot.fire("delSeries", i);
@@ -318,7 +318,7 @@ export class SeriesManager {
 					error
 				);
 			}
-			
+
 			return i;
 		}).call(this, i);
 	}
@@ -328,27 +328,27 @@ export class SeriesManager {
 	 */
 	setSeries(i, opts, _fire, _pub) {
 		if (i == null || !this.series[i]) return;
-		
+
 		let s = this.series[i];
-		
+
 		// Handle focus changes
 		if (opts.focus != null) {
 			this.setSeriesFocus(i, opts.focus);
 		}
-		
+
 		// Handle show/hide changes
 		if (opts.show != null) {
 			this.setSeriesVisibility(i, opts.show);
 		}
-		
+
 		// Handle alpha changes
 		if (opts.alpha != null) {
 			this.setSeriesAlpha(i, opts.alpha);
 		}
-		
+
 		// Apply other options
 		assign(s, opts);
-		
+
 		// Fire events
 		_fire !== false && this.uplot.fire("setSeries", i, opts);
 		_pub && this.uplot.pubSync && this.uplot.pubSync("setSeries", this.uplot, i, opts);
@@ -396,7 +396,7 @@ export class SeriesManager {
 			this.series.forEach((s, i) => {
 				if (i > 0) {
 					s._paths = null;
-					
+
 					if (minMax || s.min == null) {
 						s.min = inf;
 						s.max = -inf;
@@ -420,17 +420,17 @@ export class SeriesManager {
 	getOuterIdxs(ydata, i0, i1, dataLen) {
 		let _i0 = clamp(i0 - 1, 0, dataLen - 1);
 		let _i1 = clamp(i1 + 1, 0, dataLen - 1);
-		
+
 		// Find first non-null value before i0
 		while (ydata[_i0] == null && _i0 > 0) {
 			_i0--;
 		}
-		
+
 		// Find first non-null value after i1
 		while (ydata[_i1] == null && _i1 < dataLen - 1) {
 			_i1++;
 		}
-		
+
 		return [_i0, _i1];
 	}
 
@@ -439,7 +439,7 @@ export class SeriesManager {
 	 */
 	cacheStrokeFill(si, _points) {
 		let s = _points ? this.series[si].points : this.series[si];
-		
+
 		s._stroke = s.stroke(this.uplot, si);
 		s._fill = s.fill(this.uplot, si);
 	}
@@ -449,13 +449,13 @@ export class SeriesManager {
 	 */
 	generateSeriesPaths(si, data, i0, i1, dataLen) {
 		let s = this.series[si];
-		
+
 		if (!s || si === 0) return null;
-		
-		let _idxs = this.mode == 2 ? 
-			[0, data[si][0].length - 1] : 
+
+		let _idxs = this.mode == 2 ?
+			[0, data[si][0].length - 1] :
 			this.getOuterIdxs(data[si], i0, i1, dataLen);
-		
+
 		return s.paths(this.uplot, si, _idxs[0], _idxs[1]);
 	}
 
@@ -518,18 +518,18 @@ export class SeriesManager {
 	 */
 	prepareSeriesForDraw(data, i0, i1, dataLen) {
 		const results = [];
-		
+
 		this.series.forEach((s, i) => {
 			if (i > 0 && s.show) {
 				// Cache stroke and fill
 				FEAT_PATHS && this.cacheStrokeFill(i, false);
 				FEAT_POINTS && this.cacheStrokeFill(i, true);
-				
+
 				// Generate paths if needed
 				if (s._paths == null) {
 					s._paths = this.generateSeriesPaths(i, data, i0, i1, dataLen);
 				}
-				
+
 				results.push({
 					index: i,
 					series: s,
@@ -538,7 +538,7 @@ export class SeriesManager {
 				});
 			}
 		});
-		
+
 		return results;
 	}
 
@@ -547,16 +547,16 @@ export class SeriesManager {
 	 */
 	getSeriesDrawInfo(si, _points) {
 		let s = _points ? this.series[si].points : this.series[si];
-		
+
 		if (!s || !s._paths) return null;
-		
-		const { 
+
+		const {
 			stroke: strokeStyle = s._stroke,
 			fill: fillStyle = s._fill,
 			width = s.width,
 			flags
 		} = s._paths;
-		
+
 		return {
 			strokeStyle,
 			fillStyle,

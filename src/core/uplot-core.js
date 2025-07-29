@@ -95,7 +95,7 @@ export class UPlotCore {
 
 		// Set initial data if provided
 		if (data && data.length > 0) {
-			this.setData(data, false);
+			this.setData(data, true); // Enable scale reset for initial data
 		}
 
 		// Mark as ready
@@ -266,6 +266,10 @@ export class UPlotCore {
 
 		// Initialize canvas
 		this.renderer.initCanvas(this.opts);
+
+		if (this.data || this.opts.data) {
+			this.setData(this.data || this.opts.data, false);
+		}
 	}
 
 	/**
@@ -330,9 +334,9 @@ export class UPlotCore {
 		if (resetScales !== false) {
 			let xsc = this.scalesManager.getXScale();
 
-			if (xsc.auto(this, this.scalesManager.viaAutoScaleX)) {
+			if (xsc && typeof xsc.auto === 'function' && xsc.auto(this, this.scalesManager.viaAutoScaleX)) {
 				this.scalesManager.autoScaleX();
-			} else {
+			} else if (xsc) {
 				this.scalesManager._setScale(this.scalesManager.xScaleKey, xsc.min, xsc.max);
 			}
 
@@ -347,8 +351,12 @@ export class UPlotCore {
 	 */
 	setSize(opts) {
 		this._setSize(opts.width, opts.height);
-		// Don't auto-commit to allow tests to check flags
-		// commit() will be called by the next render cycle
+		// Trigger layout update
+		if (this.layout && typeof this.layout.updateLayout === 'function') {
+			this.layout.updateLayout();
+		}
+		// Commit changes to trigger redraw
+		this.commit();
 	}
 
 	/**
@@ -356,31 +364,35 @@ export class UPlotCore {
 	 */
 	_setSize(width, height, force) {
 		if (force || (width != this.width || height != this.height)) {
+			this.shouldConvergeSize = true;
+			this.shouldSetSize = true;
+			
 			this.layout.calcSize(width, height);
 		}
 
 		this.seriesManager.resetYSeries(false);
-
-		this.shouldConvergeSize = true;
-		this.shouldSetSize = true;
 	}
 
 	/**
 	 * Add a new series
 	 */
 	addSeries(opts, si) {
-		si = this.seriesManager.addSeries(opts, si);
+		const actualSi = this.seriesManager.addSeries(opts, si);
 
 		// Update cursor and legend
 		if (this.cursorManager.showCursor && this.cursorManager.cursor && this.cursorManager.cursor.points) {
-			this.cursorManager.addCursorPt(this.seriesManager.series[si], si, this.over, this.layout.plotWidCss, this.layout.plotHgtCss);
+			this.cursorManager.addCursorPt(this.seriesManager.series[actualSi], actualSi, this.over, this.layout.plotWidCss, this.layout.plotHgtCss);
 		}
 
 		if (this.legend.showLegend) {
-			this.legend.addLegendRow(this.seriesManager.series[si], si, this.seriesManager.series, this.mode, this.cursorManager.cursor, {});
+			this.legend.addLegendRow(this.seriesManager.series[actualSi], actualSi, this.seriesManager.series, this.mode, this.cursorManager.cursor, {});
+			// Update series legend after adding
+			if (typeof this.legend.updateSeriesLegend === 'function') {
+				this.legend.updateSeriesLegend(actualSi, true);
+			}
 		}
 
-		return si;
+		return actualSi;
 	}
 
 	/**
@@ -418,6 +430,10 @@ export class UPlotCore {
 	 */
 	setCursor(opts, _fire, _pub) {
 		this.cursorManager.setCursor(opts, _fire, _pub);
+		// Update legend when cursor moves
+		if (this.legend && this.legend.showLegend) {
+			this.legend.setLegend({}, _fire);
+		}
 	}
 
 	/**
@@ -434,6 +450,8 @@ export class UPlotCore {
 		if (opts && typeof opts === 'object') {
 			this.scalesManager._setScale(key, opts.min, opts.max);
 			this.fire("setScale", key);
+			// Trigger redraw after scale update
+			this.redraw(true, true);
 		}
 	}
 
@@ -556,6 +574,20 @@ export class UPlotCore {
 	 */
 	valToPosY(val, scale, dim, off) {
 		return this.scalesManager.valToPosY(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to horizontal position (alias for valToPosX)
+	 */
+	get valToPosH() {
+		return (val, scale, dim, off) => this.scalesManager.valToPosX(val, scale, dim, off);
+	}
+
+	/**
+	 * Convert value to vertical position (alias for valToPosY)
+	 */
+	get valToPosV() {
+		return (val, scale, dim, off) => this.scalesManager.valToPosY(val, scale, dim, off);
 	}
 
 	/**

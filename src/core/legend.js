@@ -71,7 +71,7 @@ export class LegendManager {
 
 	initLegend(opts, series, activeIdxs, mode, root, cursor, syncOpts) {
 		return withErrorBoundary('LegendManager', 'initLegend', function(opts, series, activeIdxs, mode, root, cursor, syncOpts) {
-			if (!FEAT_LEGEND) return;
+			if (!FEAT_LEGEND) return undefined;
 			
 			validateRequired(opts, 'opts', 'LegendManager', 'initLegend');
 			validateRequired(series, 'series', 'LegendManager', 'initLegend');

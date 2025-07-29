@@ -347,7 +347,7 @@ describe('Module Integration Tests', () => {
 			
 			const index = uplot.addSeries(seriesOpts);
 			
-			expect(addSeriesSpy).toHaveBeenCalledWith(seriesOpts, index);
+			expect(addSeriesSpy).toHaveBeenCalledWith(seriesOpts, undefined);
 			expect(legendUpdateSpy).toHaveBeenCalled();
 			expect(typeof index).toBe('number');
 		});

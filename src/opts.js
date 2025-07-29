@@ -336,11 +336,12 @@ export function timeSeriesVal(tzDate, stamp) {
 
 export function legendStroke(self, seriesIdx) {
 	let s = self.series[seriesIdx];
-	return s.width ? s.stroke(self, seriesIdx) : s.points.width ? s.points.stroke(self, seriesIdx) : null;
+	return s.width ? s.stroke(self, seriesIdx) : s.points?.width ? s.points.stroke(self, seriesIdx) : null;
 }
 
 export function legendFill(self, seriesIdx) {
-	return self.series[seriesIdx].fill(self, seriesIdx);
+	let s = self.series[seriesIdx];
+	return s && typeof s.fill === 'function' ? s.fill(self, seriesIdx) : null;
 }
 
 export const legendOpts = {

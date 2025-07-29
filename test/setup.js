@@ -66,6 +66,10 @@ const mockCanvasContext = {
   // Image methods
   drawImage: () => {},
   
+  // Line dash methods
+  setLineDash: () => {},
+  getLineDash: () => [],
+  
   // Properties
   fillStyle: '#000000',
   strokeStyle: '#000000',
@@ -96,6 +100,53 @@ if (typeof HTMLCanvasElement !== 'undefined') {
     return null;
   };
 }
+
+// Mock Path2D for Node.js environment
+global.Path2D = global.Path2D || class Path2D {
+  constructor(path) {
+    this.path = path || '';
+  }
+  
+  addPath(path, transform) {
+    // Mock implementation
+  }
+  
+  closePath() {
+    // Mock implementation
+  }
+  
+  moveTo(x, y) {
+    // Mock implementation
+  }
+  
+  lineTo(x, y) {
+    // Mock implementation
+  }
+  
+  bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y) {
+    // Mock implementation
+  }
+  
+  quadraticCurveTo(cpx, cpy, x, y) {
+    // Mock implementation
+  }
+  
+  arc(x, y, radius, startAngle, endAngle, anticlockwise) {
+    // Mock implementation
+  }
+  
+  arcTo(x1, y1, x2, y2, radius) {
+    // Mock implementation
+  }
+  
+  ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise) {
+    // Mock implementation
+  }
+  
+  rect(x, y, width, height) {
+    // Mock implementation
+  }
+};
 
 // Mock performance.memory for memory testing
 if (typeof performance !== 'undefined' && !performance.memory) {

@@ -73,8 +73,9 @@ export class EventManager {
 	 * Initialize event handling system
 	 */
 	initEvents(opts) {
-		return withErrorBoundary('EventManager', 'initEvents', function(opts) {
-			validateRequired(opts, 'opts', 'EventManager', 'initEvents');
+		try {
+			return withErrorBoundary('EventManager', 'initEvents', function(opts) {
+				validateRequired(opts, 'opts', 'EventManager', 'initEvents');
 			
 			const { cursor, over, wrap } = this.uplot;
 			
@@ -128,7 +129,11 @@ export class EventManager {
 					error
 				);
 			}
-		}).call(this, opts);
+			}).call(this, opts);
+		} catch (error) {
+			errorReporter.reportError(error);
+			throw error;
+		}
 	}
 
 	/**
@@ -186,6 +191,15 @@ export class EventManager {
 	onMouse(ev, targ, fn, onlyTarg = true) {
 		const { cursor } = this.uplot;
 		const targListeners = this.mouseListeners.get(targ) || {};
+		
+		// Check if cursor and bind exist
+		if (!cursor || !cursor.bind || typeof cursor.bind[ev] !== 'function') {
+			// Fallback: bind directly without cursor filtering
+			on(ev, targ, targListeners[ev] = fn);
+			this.mouseListeners.set(targ, targListeners);
+			return;
+		}
+		
 		const listener = cursor.bind[ev](this.uplot, targ, fn, onlyTarg);
 
 		if (listener) {
@@ -266,17 +280,29 @@ export class EventManager {
 					this.onMouse(mouseup, doc, this.mouseUp.bind(this), false);
 					
 					if (typeof this.uplot.pubSync === 'function') {
-						this.uplot.pubSync(mousedown, this.uplot, this.mouseLeft0, this.mouseTop0, 
-							this.uplot.plotWidCss, this.uplot.plotHgtCss, null);
+						try {
+							this.uplot.pubSync(mousedown, this.uplot, this.mouseLeft0, this.mouseTop0, 
+								this.uplot.plotWidCss, this.uplot.plotHgtCss, null);
+						} catch (pubSyncError) {
+							// Log pubSync errors but don't throw - they shouldn't break mouse handling
+							errorReporter.reportError(new UPlotError(
+								`PubSync error in mouseDown: ${pubSyncError.message}`,
+								'EventManager',
+								{ method: 'mouseDown', type: ERROR_TYPES.EVENT_HANDLING },
+								pubSyncError
+							));
+						}
 					}
 				}
 			} catch (error) {
-				throw new UPlotError(
+				const uplotError = new UPlotError(
 					`Error handling mouse down: ${error.message}`,
 					'EventManager',
 					{ method: 'mouseDown', type: ERROR_TYPES.EVENT_HANDLING },
 					error
 				);
+				errorReporter.reportError(uplotError);
+				throw uplotError;
 			}
 		}).call(this, e, src, _l, _t, _w, _h, _i);
 	}
